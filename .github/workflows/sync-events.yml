@@ -1,0 +1,30 @@
+name: Daily Event Ingestion Pipeline
+
+on:
+  schedule:
+    - cron: '30 14 * * *'
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    name: Run Scraping Ingestion Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Execute Ingestion Pipeline
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          REVALIDATION_SECRET: ${{ secrets.REVALIDATION_SECRET }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+        run: npm run ingest
