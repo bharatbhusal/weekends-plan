@@ -2,30 +2,44 @@ import { Ingester } from '../base';
 import { NormalizedEvent } from '@/types/event';
 import crypto from 'crypto';
 
-interface LumaEvent {
-  event: {
-    api_id: string;
-    title: string;
-    date: string;
-    end_date?: string;
-    timezone: string;
-    venue?: string;
-    geo_address?: string;
-    cover_image?: string;
-    registration_url: string;
-  };
-  organizer?: {
-    name: string;
+interface RawGeoInfo {
+  city?: string;
+  city_state?: string;
+  country?: string;
+  short_address?: string;
+  full_address?: string;
+}
+
+interface RawEvent {
+  api_id: string;
+  name: string;
+  cover_url?: string;
+  start_at: string;
+  end_at?: string;
+  timezone: string;
+  url: string;
+  location_type?: string;
+  geo_address_info?: RawGeoInfo;
+  geo_address_visibility?: string;
+  coordinate?: { latitude: number; longitude: number };
+}
+
+interface RawEntry {
+  api_id: string;
+  event: RawEvent;
+  start_at: string;
+  hosts?: Array<{ name: string }>;
+  featured_city?: { api_id: string; name: string; slug: string };
+  ticket_info?: {
+    is_free?: boolean;
+    price?: number | null;
   };
 }
 
-interface LumaResponse {
-  entries: Array<{
-    event: LumaEvent['event'];
-    organizer?: LumaEvent['organizer'];
-  }>;
+interface RawResponse {
+  entries: RawEntry[];
   has_more: boolean;
-  pagination_cursor?: string;
+  next_cursor?: string;
 }
 
 export class LumaClient implements Ingester {
@@ -87,50 +101,58 @@ export class LumaClient implements Ingester {
       });
 
       if (!res.ok) {
-        throw new Error(`Luma API returned ${res.status} for city "${city}"`);
+        const body = await res.text().catch(() => '');
+        throw new Error(`Luma API returned ${res.status} for city "${city}": ${body.slice(0, 100)}`);
       }
 
-      const data: LumaResponse = await res.json();
+      const data: RawResponse = await res.json();
 
       for (const entry of data.entries || []) {
-        const ev = entry.event;
-        const normalized = this.normalize(ev, city);
+        const normalized = this.normalize(entry);
         if (normalized) allEvents.push(normalized);
       }
 
-      if (!data.has_more || !data.pagination_cursor) break;
-      cursor = data.pagination_cursor;
+      if (!data.has_more || !data.next_cursor) break;
+      cursor = data.next_cursor;
     }
 
     return allEvents;
   }
 
-  private normalize(event: LumaEvent['event'], city: string): NormalizedEvent | null {
-    if (!event.title || !event.api_id) return null;
+  private normalize(entry: RawEntry): NormalizedEvent | null {
+    const ev = entry.event;
+    if (!ev.name || !ev.api_id) return null;
 
     const deterministicId = crypto
       .createHash('sha256')
-      .update(`luma_${event.api_id}`)
+      .update(`luma_${ev.api_id}`)
       .digest('hex');
 
-    let imageUrl = event.cover_image;
-    if (imageUrl && !imageUrl.startsWith('http')) {
-      imageUrl = undefined;
-    }
+    const imageUrl = ev.cover_url?.startsWith('http') ? ev.cover_url : undefined;
+
+    const cityName =
+      ev.geo_address_info?.city || entry.featured_city?.name || '';
+
+    const locationName = ev.geo_address_info?.short_address
+      ? `${ev.geo_address_info.short_address}${cityName ? `, ${cityName}` : ''}`
+      : ev.geo_address_info?.full_address || cityName || 'Online / Virtual';
 
     return {
       _id: deterministicId,
-      title: event.title,
+      title: ev.name,
       description: '',
-      startDateTime: new Date(event.date),
-      endDateTime: event.end_date ? new Date(event.end_date) : undefined,
+      startDateTime: new Date(ev.start_at),
+      endDateTime: ev.end_at ? new Date(ev.end_at) : undefined,
       location: {
-        name: event.venue || event.geo_address || 'Online / Virtual',
-        address: event.geo_address || event.venue || '',
-        city,
+        name: locationName,
+        address: ev.geo_address_info?.full_address || ev.geo_address_info?.short_address || '',
+        city: cityName,
+        coordinates: ev.coordinate
+          ? { lat: ev.coordinate.latitude, lng: ev.coordinate.longitude }
+          : undefined,
       },
       sourceName: 'luma',
-      originalUrl: event.registration_url,
+      originalUrl: ev.url ? `https://lu.ma/${ev.url}` : 'https://lu.ma',
       imageUrl,
       category: 'Community',
       updatedAt: new Date(),

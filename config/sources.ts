@@ -8,16 +8,14 @@ export const sourceConfigs: SourceConfig[] = [
     enabled: true,
     config: {
       cities: [
-        'hyderabad',
         'bengaluru',
         'mumbai',
-        'delhi',
+        'new-delhi',
+        'hyderabad',
         'pune',
         'chennai',
         'kolkata',
         'ahmedabad',
-        'kochi',
-        'chandigarh',
         'jaipur',
         'lucknow',
       ],
