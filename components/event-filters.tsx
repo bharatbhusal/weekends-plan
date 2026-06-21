@@ -96,8 +96,8 @@ export function EventFilters({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="relative flex-1 w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search events..."
@@ -115,13 +115,14 @@ export function EventFilters({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                {allSourcesSelected
-                  ? 'All sources'
-                  : `${filters.sources.length} source${filters.sources.length > 1 ? 's' : ''}`}
+              <Button variant="outline" size="sm" className="gap-1">
+                <span className="hidden sm:inline">{allSourcesSelected ? 'All sources' : `${filters.sources.length} src`}</span>
+                <span className="sm:hidden">
+                  <Globe className="h-3.5 w-3.5" />
+                </span>
                 <ChevronDown className="h-3.5 w-3.5 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
@@ -148,9 +149,9 @@ export function EventFilters({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
+              <Button variant="outline" size="sm" className="gap-1">
                 <SortIcon className="h-3.5 w-3.5" />
-                {currentSortLabel}
+                <span className="hidden sm:inline">{currentSortLabel}</span>
                 <ChevronDown className="h-3.5 w-3.5 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
@@ -185,12 +186,14 @@ export function EventFilters({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <MapPin className="h-3.5 w-3.5" />
-                {selectedCity
-                  ? selectedCity.charAt(0).toUpperCase() + selectedCity.slice(1)
-                  : 'All cities'}
-                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+              <Button variant="outline" size="sm" className="gap-1">
+                <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline truncate max-w-20">
+                  {selectedCity
+                    ? selectedCity.charAt(0).toUpperCase() + selectedCity.slice(1)
+                    : 'All cities'}
+                </span>
+                <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44 max-h-72 overflow-y-auto">
@@ -208,7 +211,7 @@ export function EventFilters({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="h-6 w-px bg-border mx-1" />
+          <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
 
           <Button
             variant="ghost"
@@ -230,7 +233,7 @@ export function EventFilters({
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={clearAll} className="text-xs gap-1">
               <X className="h-3 w-3" />
-              Clear
+              <span className="hidden sm:inline">Clear</span>
             </Button>
           )}
         </div>
