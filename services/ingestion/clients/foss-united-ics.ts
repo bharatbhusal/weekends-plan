@@ -2,6 +2,15 @@ import { Ingester } from "../base";
 import { NormalizedEvent } from "@/types/event";
 import crypto from "crypto";
 import ical from "node-ical";
+import { cleanLocation } from "../location-cleaner";
+
+function extractCity(raw: string): string | undefined {
+	const first = raw.split("\n")[0];
+	const parts = first.split(",").map((s) => s.trim()).filter(Boolean);
+	const last = parts[parts.length - 1];
+	if (!last || /https?:\/\//i.test(last)) return undefined;
+	return last;
+}
 
 export class FossUnitedIcsClient implements Ingester {
 	readonly id = "foss_united_ics";
@@ -39,14 +48,13 @@ export class FossUnitedIcsClient implements Ingester {
 				.update(`fossunited_ics_${originalId}`)
 				.digest("hex");
 
-			let city: string | undefined;
-			const locationStr = vevent.location || "";
-			if (locationStr) {
-				const parts = locationStr
-					.split(",")
-					.map((s) => s.trim());
-				city = parts[parts.length - 1];
-			}
+			const rawLocation = vevent.location || "";
+			const cleaned = cleanLocation(
+				rawLocation,
+				rawLocation,
+				false,
+			);
+			const city = extractCity(rawLocation);
 
 			const rawCategories = (vevent as any).categories;
 			const category = Array.isArray(rawCategories)
@@ -64,12 +72,12 @@ export class FossUnitedIcsClient implements Ingester {
 					? new Date(vevent.end)
 					: undefined,
 				location: {
-					name: locationStr || "Various Locations",
-					address: locationStr || "",
+					name: rawLocation ? cleaned.name : "Various Locations",
+					address: cleaned.address,
 					city,
 				},
 				sourceName: "foss_united",
-				originalUrl: "https://fossunited.org/events",
+				originalUrl: vevent.url || "https://fossunited.org/events",
 				imageUrl: undefined,
 				category,
 				updatedAt: new Date(),

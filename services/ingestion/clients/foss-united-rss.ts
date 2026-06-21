@@ -3,6 +3,7 @@ import { NormalizedEvent } from '@/types/event';
 import crypto from 'crypto';
 import FeedParser from 'feedparser';
 import { Readable } from 'stream';
+import { cleanLocation } from '../location-cleaner';
 
 const MONTHS: Record<string, number> = {
   jan: 0, january: 0,
@@ -132,6 +133,8 @@ export class FossUnitedRssClient implements Ingester {
       if (chapterCity) city = chapterCity;
     }
 
+    const cleaned = cleanLocation(locationName, locationName, false);
+
     const eventLink =
       extractLinkFromDescription(description) || item.link || 'https://fossunited.org/events';
 
@@ -144,8 +147,8 @@ export class FossUnitedRssClient implements Ingester {
       startDateTime,
       endDateTime: parsedDates.end,
       location: {
-        name: locationName,
-        address: locationName,
+        name: cleaned.name,
+        address: cleaned.address,
         city,
       },
       sourceName: 'foss_united',

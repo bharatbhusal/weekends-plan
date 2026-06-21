@@ -3,6 +3,7 @@ import { createIngester } from "./registry";
 import { NormalizedEvent } from "@/types/event";
 import { EventDeduplicator } from "@/services/deduplicator";
 import { filterEvents } from "./filter";
+import { enrichLumaDescriptions } from "./clients/luma";
 
 export interface IngestionResult {
 	totalFetched: number;
@@ -77,6 +78,15 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 	}
 
 	const filteredEvents = filterEvents(allEvents);
+
+	const lumaEvents = filteredEvents.filter(
+		(e) => e.sourceName === "luma" && !e.description,
+	);
+	if (lumaEvents.length > 0) {
+		console.log(`Enriching ${lumaEvents.length} Luma event descriptions...`);
+		await enrichLumaDescriptions(lumaEvents);
+	}
+
 	const uniqueEvents =
 		EventDeduplicator.deduplicate(filteredEvents);
 	console.log(

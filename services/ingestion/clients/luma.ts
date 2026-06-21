@@ -1,6 +1,7 @@
 import { Ingester } from '../base';
 import { NormalizedEvent } from '@/types/event';
 import crypto from 'crypto';
+import { cleanLocation } from '../location-cleaner';
 
 interface RawGeoInfo {
   city?: string;
@@ -40,6 +41,36 @@ interface RawResponse {
   entries: RawEntry[];
   has_more: boolean;
   next_cursor?: string;
+}
+
+const DESCRIPTION_URL_RE = /<meta\s+(?:name|property)="description"\s+content="([^"]+)"/i;
+
+export async function enrichLumaDescriptions(
+  events: NormalizedEvent[],
+): Promise<void> {
+  const batchSize = 5;
+  for (let i = 0; i < events.length; i += batchSize) {
+    const batch = events.slice(i, i + batchSize);
+    await Promise.allSettled(
+      batch.map(async (event) => {
+        if (event.description) return;
+        try {
+          const res = await fetch(event.originalUrl, {
+            signal: AbortSignal.timeout(5000),
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WeekendsPlan/1.0)' },
+          });
+          if (!res.ok) return;
+          const html = await res.text();
+          const m = html.match(DESCRIPTION_URL_RE);
+          if (m) {
+            event.description = m[1].replace(/&amp;/g, '&').trim();
+          }
+        } catch {
+          // best-effort
+        }
+      }),
+    );
+  }
 }
 
 export class LumaClient implements Ingester {
@@ -133,9 +164,14 @@ export class LumaClient implements Ingester {
     const cityName =
       ev.geo_address_info?.city || entry.featured_city?.name || '';
 
-    const locationName = ev.geo_address_info?.short_address
-      ? `${ev.geo_address_info.short_address}${cityName ? `, ${cityName}` : ''}`
-      : ev.geo_address_info?.full_address || cityName || 'Online / Virtual';
+    const rawShort = ev.geo_address_info?.short_address || '';
+    const rawFull = ev.geo_address_info?.full_address || '';
+    const rawName = rawShort
+      ? `${rawShort}${cityName && !rawShort.toLowerCase().includes(cityName.toLowerCase()) ? `, ${cityName}` : ''}`
+      : rawFull || cityName || 'Online / Virtual';
+    const hasCoords = !!ev.coordinate;
+
+    const cleaned = cleanLocation(rawName, rawFull, hasCoords);
 
     return {
       _id: deterministicId,
@@ -144,9 +180,9 @@ export class LumaClient implements Ingester {
       startDateTime: new Date(ev.start_at),
       endDateTime: ev.end_at ? new Date(ev.end_at) : undefined,
       location: {
-        name: locationName,
-        address: ev.geo_address_info?.full_address || ev.geo_address_info?.short_address || '',
-        city: cityName,
+        name: cleaned.name,
+        address: cleaned.address,
+        city: cityName || undefined,
         coordinates: ev.coordinate
           ? { lat: ev.coordinate.latitude, lng: ev.coordinate.longitude }
           : undefined,

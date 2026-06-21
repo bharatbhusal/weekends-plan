@@ -2,6 +2,8 @@ import { Ingester } from "./base";
 import { LumaClient } from "./clients/luma";
 import { FossUnitedIcsClient } from "./clients/foss-united-ics";
 import { FossUnitedRssClient } from "./clients/foss-united-rss";
+import { MeetupClient } from "./clients/meetup";
+import { EventbriteClient } from "./clients/eventbrite";
 import { SourceConfig } from "@/types/event";
 
 const registry = new Map<string, new () => Ingester>();
@@ -13,6 +15,8 @@ function register(id: string, ctor: new () => Ingester) {
 register("luma", LumaClient);
 register("foss_united_ics", FossUnitedIcsClient);
 register("foss_united_rss", FossUnitedRssClient);
+register("meetup", MeetupClient);
+register("eventbrite", EventbriteClient);
 
 export function createIngester(
 	source: SourceConfig,

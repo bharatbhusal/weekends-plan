@@ -1,5 +1,19 @@
 import { NormalizedEvent } from "@/types/event";
 
+function pickMoreSpecific(a: string, b: string): string {
+	const isGeneric = (u: string) => {
+		try {
+			const p = new URL(u);
+			return p.pathname === "/" || p.pathname === "/events";
+		} catch {
+			return false;
+		}
+	};
+	if (isGeneric(a)) return b;
+	if (isGeneric(b)) return a;
+	return a.length <= b.length ? a : b;
+}
+
 export class EventDeduplicator {
 	private static calculateJaccardSimilarity(
 		a: string,
@@ -56,7 +70,10 @@ export class EventDeduplicator {
 
 					if (similarity > 0.85) {
 						isDuplicate = true;
-						existing.originalUrl = `${existing.originalUrl} | ${incoming.originalUrl}`;
+						existing.originalUrl = pickMoreSpecific(
+							existing.originalUrl,
+							incoming.originalUrl,
+						);
 						if (!existing.imageUrl && incoming.imageUrl) {
 							existing.imageUrl = incoming.imageUrl;
 						}
