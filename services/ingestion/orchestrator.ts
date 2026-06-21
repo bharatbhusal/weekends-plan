@@ -2,14 +2,17 @@ import { sourceConfigs } from "@/config/sources";
 import { createIngester } from "./registry";
 import { NormalizedEvent } from "@/types/event";
 import { EventDeduplicator } from "@/services/deduplicator";
-import { filterEvents } from "./filter";
+import { isEventAllowed } from "./filter";
 import { enrichLumaDescriptions } from "./clients/luma";
+import { normalizeCity, isIndianCity } from "./city-mapping";
 
 export interface IngestionResult {
 	totalFetched: number;
 	totalUnique: number;
 	inserted: number;
 	modified: number;
+	otherInserted: number;
+	otherModified: number;
 	sourceResults: Array<{
 		source: string;
 		count: number;
@@ -73,25 +76,45 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 			totalUnique: 0,
 			inserted: 0,
 			modified: 0,
+			otherInserted: 0,
+			otherModified: 0,
 			sourceResults,
 		};
 	}
 
-	const filteredEvents = filterEvents(allEvents);
-
-	const lumaEvents = filteredEvents.filter(
+	const lumaEvents = allEvents.filter(
 		(e) => e.sourceName === "luma" && !e.description,
 	);
 	if (lumaEvents.length > 0) {
-		console.log(`Enriching ${lumaEvents.length} Luma event descriptions...`);
+		console.log(
+			`Enriching ${lumaEvents.length} Luma event descriptions...`,
+		);
 		await enrichLumaDescriptions(lumaEvents);
 	}
 
+	for (const event of allEvents) {
+		event.location.city = normalizeCity(event.location.city) || undefined;
+	}
+
 	const uniqueEvents =
-		EventDeduplicator.deduplicate(filteredEvents);
+		EventDeduplicator.deduplicate(allEvents);
 	console.log(
-		`Dedup: ${filteredEvents.length} -> ${uniqueEvents.length} unique events`,
+		`Dedup: ${allEvents.length} -> ${uniqueEvents.length} unique events`,
 	);
+
+	const indianTech: NormalizedEvent[] = [];
+	const others: NormalizedEvent[] = [];
+	for (const event of uniqueEvents) {
+		const city = event.location.city;
+		const isIndian =
+			isIndianCity(city) || !city;
+		const isTech = isEventAllowed(event);
+		if (isIndian && isTech) {
+			indianTech.push(event);
+		} else {
+			others.push(event);
+		}
+	}
 
 	const { MongoClient } = await import("mongodb");
 	const uri = process.env.MONGODB_URI;
@@ -107,31 +130,44 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 	try {
 		await client.connect();
 		const db = client.db("events_db");
-		const collection = db.collection<NormalizedEvent>(
-			"municipal_events",
-		);
 
-		const bulkOps = uniqueEvents.map((event) => ({
-			updateOne: {
-				filter: { _id: event._id },
-				update: { $set: event },
-				upsert: true,
-			},
-		}));
+		const writeBatch = async (
+			events: NormalizedEvent[],
+			collectionName: string,
+		) => {
+			if (events.length === 0)
+				return { upsertedCount: 0, modifiedCount: 0 };
+			const collection =
+				db.collection<NormalizedEvent>(collectionName);
+			const bulkOps = events.map((event) => ({
+				updateOne: {
+					filter: { _id: event._id },
+					update: { $set: event },
+					upsert: true,
+				},
+			}));
+			return collection.bulkWrite(bulkOps, { ordered: false });
+		};
 
-		const bulkResult = await collection.bulkWrite(bulkOps, {
-			ordered: false,
-		});
+		const [mainResult, otherResult] = await Promise.all([
+			writeBatch(indianTech, "municipal_events"),
+			writeBatch(others, "other_events"),
+		]);
 
 		console.log(
-			`DB write: ${bulkResult.upsertedCount} inserted, ${bulkResult.modifiedCount} updated`,
+			`municipal_events: ${mainResult.upsertedCount} inserted, ${mainResult.modifiedCount} updated`,
+		);
+		console.log(
+			`other_events: ${otherResult.upsertedCount} inserted, ${otherResult.modifiedCount} updated`,
 		);
 
 		return {
 			totalFetched: allEvents.length,
 			totalUnique: uniqueEvents.length,
-			inserted: bulkResult.upsertedCount,
-			modified: bulkResult.modifiedCount,
+			inserted: mainResult.upsertedCount,
+			modified: mainResult.modifiedCount,
+			otherInserted: otherResult.upsertedCount,
+			otherModified: otherResult.modifiedCount,
 			sourceResults,
 		};
 	} finally {

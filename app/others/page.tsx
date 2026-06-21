@@ -1,6 +1,6 @@
 import { connectToDatabase } from '@/lib/mongodb';
 import { NormalizedEvent } from '@/types/event';
-import { HomePageClient } from './home-page-client';
+import { HomePageClient } from '@/app/home-page-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +9,7 @@ async function getEvents(): Promise<NormalizedEvent[]> {
     const db = await connectToDatabase();
 
     const events = await db
-      .collection<NormalizedEvent>('municipal_events')
+      .collection<NormalizedEvent>('other_events')
       .find({ startDateTime: { $gte: new Date() } })
       .sort({ startDateTime: 1 })
       .limit(200)
@@ -24,7 +24,7 @@ async function getEvents(): Promise<NormalizedEvent[]> {
   }
 }
 
-export default async function Page() {
+export default async function OthersPage() {
   const events = await getEvents();
 
   const sources = Array.from(new Set(events.map((e) => e.sourceName)));
@@ -41,7 +41,7 @@ export default async function Page() {
       initialEvents={events}
       initialSources={sources}
       initialCities={cities}
-      title="Weekends Plan"
+      title="Weekends Plan - Other Events"
     />
   );
 }
