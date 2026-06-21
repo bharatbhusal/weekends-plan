@@ -1,10 +1,39 @@
 'use client';
 
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, X, LayoutGrid, List } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import {
+  Search,
+  X,
+  LayoutGrid,
+  List,
+  ChevronDown,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  MapPin,
+  Calendar,
+  Globe,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+export type SortField = 'date' | 'city' | 'location';
+export type SortOrder = 'asc' | 'desc';
+
+export interface SortState {
+  field: SortField;
+  order: SortOrder;
+}
 
 interface FilterState {
   search: string;
@@ -17,23 +46,30 @@ interface EventFiltersProps {
   cities: string[];
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
+  sort: SortState;
+  onSortChange: (sort: SortState) => void;
   view: 'grid' | 'list';
   onViewChange: (view: 'grid' | 'list') => void;
 }
 
-const sourceColors: Record<string, string> = {
-  luma: 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 border-purple-600/30',
-  foss_united: 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border-emerald-600/30',
-};
+const SORT_OPTIONS: { field: SortField; label: string; icon: typeof Calendar }[] = [
+  { field: 'date', label: 'Date', icon: Calendar },
+  { field: 'city', label: 'City', icon: MapPin },
+  { field: 'location', label: 'Location', icon: Globe },
+];
 
 export function EventFilters({
   sources,
   cities,
   filters,
   onFiltersChange,
+  sort,
+  onSortChange,
   view,
   onViewChange,
 }: EventFiltersProps) {
+  const allSourcesSelected = filters.sources.length === 0;
+
   const toggleSource = (source: string) => {
     const next = filters.sources.includes(source)
       ? filters.sources.filter((s) => s !== source)
@@ -41,14 +77,22 @@ export function EventFilters({
     onFiltersChange({ ...filters, sources: next });
   };
 
-  const toggleCity = (city: string) => {
-    const next = filters.cities.includes(city)
-      ? filters.cities.filter((c) => c !== city)
-      : [...filters.cities, city];
-    onFiltersChange({ ...filters, cities: next });
+  const selectCity = (city: string | null) => {
+    onFiltersChange({ ...filters, cities: city ? [city] : [] });
+  };
+
+  const toggleOrder = () => {
+    onSortChange({ ...sort, order: sort.order === 'asc' ? 'desc' : 'asc' });
+  };
+
+  const clearAll = () => {
+    onFiltersChange({ search: '', sources: [], cities: [] });
   };
 
   const hasActiveFilters = filters.search || filters.sources.length > 0 || filters.cities.length > 0;
+  const currentSortLabel = SORT_OPTIONS.find((o) => o.field === sort.field)?.label || 'Date';
+  const SortIcon = SORT_OPTIONS.find((o) => o.field === sort.field)?.icon || Calendar;
+  const selectedCity = filters.cities[0] || null;
 
   return (
     <div className="space-y-4">
@@ -72,6 +116,100 @@ export function EventFilters({
         </div>
 
         <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                {allSourcesSelected
+                  ? 'All sources'
+                  : `${filters.sources.length} source${filters.sources.length > 1 ? 's' : ''}`}
+                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {sources.map((source) => (
+                <DropdownMenuCheckboxItem
+                  key={source}
+                  checked={allSourcesSelected || filters.sources.includes(source)}
+                  onCheckedChange={() => toggleSource(source)}
+                >
+                  {source === 'foss_united' ? 'FOSS United' : source.charAt(0).toUpperCase() + source.slice(1)}
+                </DropdownMenuCheckboxItem>
+              ))}
+              {!allSourcesSelected && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => onFiltersChange({ ...filters, sources: [] })}>
+                    Select all
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <SortIcon className="h-3.5 w-3.5" />
+                {currentSortLabel}
+                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuRadioGroup
+                value={sort.field}
+                onValueChange={(v) => onSortChange({ ...sort, field: v as SortField })}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <DropdownMenuRadioItem key={opt.field} value={opt.field}>
+                    <opt.icon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                    {opt.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1"
+            onClick={toggleOrder}
+            title={sort.order === 'asc' ? 'Ascending' : 'Descending'}
+          >
+            {sort.order === 'asc' ? (
+              <ArrowUp className="h-3.5 w-3.5" />
+            ) : (
+              <ArrowDown className="h-3.5 w-3.5" />
+            )}
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <MapPin className="h-3.5 w-3.5" />
+                {selectedCity
+                  ? selectedCity.charAt(0).toUpperCase() + selectedCity.slice(1)
+                  : 'All cities'}
+                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 max-h-72 overflow-y-auto">
+              <DropdownMenuRadioGroup
+                value={selectedCity || ''}
+                onValueChange={(v) => selectCity(v || null)}
+              >
+                <DropdownMenuRadioItem value="">All cities</DropdownMenuRadioItem>
+                {cities.map((city) => (
+                  <DropdownMenuRadioItem key={city} value={city} className="capitalize">
+                    {city}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div className="h-6 w-px bg-border mx-1" />
+
           <Button
             variant="ghost"
             size="icon"
@@ -88,53 +226,14 @@ export function EventFilters({
           >
             <List className="h-4 w-4" />
           </Button>
+
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearAll} className="text-xs gap-1">
+              <X className="h-3 w-3" />
+              Clear
+            </Button>
+          )}
         </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {sources.map((source) => {
-          const active = filters.sources.length === 0 || filters.sources.includes(source);
-          return (
-            <button
-              key={source}
-              onClick={() => toggleSource(source)}
-              className={cn(
-                'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                active
-                  ? sourceColors[source] || 'bg-primary/10 text-primary border-primary/20'
-                  : 'border-muted-foreground/20 text-muted-foreground/50 line-through'
-              )}
-            >
-              {source === 'foss_united' ? 'FOSS United' : source.charAt(0).toUpperCase() + source.slice(1)}
-            </button>
-          );
-        })}
-
-        {cities.slice(0, 8).map((city) => {
-          const active = filters.cities.length === 0 || filters.cities.includes(city);
-          return (
-            <Badge
-              key={city}
-              variant={active ? 'default' : 'outline'}
-              className={cn(
-                'cursor-pointer capitalize',
-                !active && 'opacity-40 hover:opacity-70'
-              )}
-              onClick={() => toggleCity(city)}
-            >
-              {city}
-            </Badge>
-          );
-        })}
-
-        {hasActiveFilters && (
-          <button
-            onClick={() => onFiltersChange({ search: '', sources: [], cities: [] })}
-            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
-          >
-            Clear all
-          </button>
-        )}
       </div>
     </div>
   );
