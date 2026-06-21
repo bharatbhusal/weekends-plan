@@ -24,36 +24,6 @@ import {
 	SECTION_ORDER,
 } from "@/lib/date-utils";
 
-const STORAGE_KEY = "weekends-plan-prefs";
-
-interface SavedPrefs {
-	filters: {
-		search: string;
-		sources: string[];
-		cities: string[];
-	};
-	view: "grid" | "list";
-}
-
-function loadPrefs(): SavedPrefs | null {
-	if (typeof window === "undefined") return null;
-	try {
-		const raw = localStorage.getItem(STORAGE_KEY);
-		if (raw) return JSON.parse(raw);
-	} catch {
-		/* ignore */
-	}
-	return null;
-}
-
-function savePrefs(prefs: SavedPrefs) {
-	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-	} catch {
-		/* ignore */
-	}
-}
-
 interface HomePageClientProps {
 	initialEvents: NormalizedEvent[];
 	initialSources: string[];
@@ -88,16 +58,6 @@ export function HomePageClient({
 	});
 
 	const [view, setView] = useState<"grid" | "list">("grid");
-	const [hydrated, setHydrated] = useState(false);
-
-	useEffect(() => {
-		const saved = loadPrefs();
-		if (saved) {
-			setFilters(saved.filters);
-			setView(saved.view);
-		}
-		setHydrated(true);
-	}, []);
 
 	const [page, setPage] = useState(0);
 
@@ -133,10 +93,6 @@ export function HomePageClient({
 			return true;
 		});
 	}, [initialEvents, filters]);
-
-	useEffect(() => {
-		savePrefs({ filters, view });
-	}, [filters, view]);
 
 	const sections = useMemo(() => {
 		const now = new Date();
