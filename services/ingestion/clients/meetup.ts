@@ -1,6 +1,6 @@
 import { Ingester } from "../base";
 import { NormalizedEvent } from "@/types/event";
-import crypto from "crypto";
+import { makeEventId } from "@/lib/hash";
 import { cleanLocation } from "../location-cleaner";
 
 const NEXT_DATA_RE =
@@ -138,10 +138,7 @@ export class MeetupClient implements Ingester {
 		raw: MeetupRawEvent,
 		city: string,
 	): NormalizedEvent {
-		const deterministicId = crypto
-			.createHash("sha256")
-			.update(`meetup_${raw.id}`)
-			.digest("hex");
+		const deterministicId = makeEventId("meetup", raw.id);
 
 		const venueName =
 			raw.venue?.name || raw.venue?.address || "";

@@ -1,41 +1,20 @@
-const URL_RE = /https?:\/\/\S+/g;
+// ponytail: inline the 5 tiny one-caller helpers
 
-function stripUrls(s: string): string {
-  return s.replace(URL_RE, "").trim();
-}
-
-function firstLine(s: string): string {
-  return s.split("\n")[0].trim();
-}
-
-function dedupeSegments(s: string): string {
-  const parts = s.split(",").map((p) => p.trim()).filter(Boolean);
+function dedupeAndClean(s: string): string {
+  const parts = s.replace(/https?:\/\/\S+/g, "").trim().split("\n")[0].trim().split(",").map(p => p.trim()).filter(Boolean);
   const seen = new Set<string>();
-  const result: string[] = [];
-  for (const p of parts) {
+  return parts.filter(p => {
     const key = p.toLowerCase();
-    if (!seen.has(key)) {
-      seen.add(key);
-      result.push(p);
-    }
-  }
-  return result.join(", ");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).join(", ");
 }
 
-function shorten(s: string): string {
-  const parts = s.split(",").map((p) => p.trim()).filter(Boolean);
-  return parts.length > 1 ? parts[0] : s;
-}
-
-export function cleanLocation(
-  rawName: string,
-  rawAddress?: string,
-  hasCoords?: boolean,
-): { name: string; address: string } {
-  const cleaned = dedupeSegments(stripUrls(firstLine(rawName || "")));
-  const name = hasCoords ? cleaned : shorten(cleaned);
-  const address = rawAddress
-    ? dedupeSegments(stripUrls(firstLine(rawAddress)))
-    : name;
+export function cleanLocation(rawName: string, rawAddress?: string, hasCoords?: boolean): { name: string; address: string } {
+  const cleaned = dedupeAndClean(rawName || "");
+  const parts = cleaned.split(",").filter(Boolean);
+  const name = hasCoords ? cleaned : (parts.length > 1 ? parts[0].trim() : cleaned);
+  const address = rawAddress ? dedupeAndClean(rawAddress) : name;
   return { name, address };
 }

@@ -6,26 +6,19 @@ import { MeetupClient } from "./clients/meetup";
 import { EventbriteClient } from "./clients/eventbrite";
 import { SourceConfig } from "@/types/event";
 
-const registry = new Map<string, new () => Ingester>();
+const INGESTERS: Record<string, new () => Ingester> = {
+  luma: LumaClient,
+  foss_united_ics: FossUnitedIcsClient,
+  foss_united_rss: FossUnitedRssClient,
+  meetup: MeetupClient,
+  eventbrite: EventbriteClient,
+};
 
-function register(id: string, ctor: new () => Ingester) {
-	registry.set(id, ctor);
-}
-
-register("luma", LumaClient);
-register("foss_united_ics", FossUnitedIcsClient);
-register("foss_united_rss", FossUnitedRssClient);
-register("meetup", MeetupClient);
-register("eventbrite", EventbriteClient);
-
-export function createIngester(
-	source: SourceConfig,
-): Ingester | null {
-	const ctor = registry.get(source.id);
-	if (!ctor) return null;
-	return new ctor();
+export function createIngester(source: SourceConfig): Ingester | null {
+  const Ctor = INGESTERS[source.id];
+  return Ctor ? new Ctor() : null;
 }
 
 export function getRegisteredSources(): string[] {
-	return Array.from(registry.keys());
+  return Object.keys(INGESTERS);
 }
