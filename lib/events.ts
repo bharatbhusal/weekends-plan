@@ -10,7 +10,6 @@ export async function getEvents(
 			.collection<NormalizedEvent>(collectionName)
 			.find()
 			.sort({ startDateTime: 1 })
-			.limit(200)
 			.toArray();
 		return JSON.parse(JSON.stringify(events));
 	} catch (err) {
