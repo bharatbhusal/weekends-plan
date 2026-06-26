@@ -2,9 +2,7 @@ import { sourceConfigs } from "@/config/sources";
 import { createIngester } from "./registry";
 import { NormalizedEvent } from "@/types/event";
 import { deduplicate } from "@/services/deduplicator";
-import { isEventAllowed } from "./filter";
-import { enrichLumaDescriptions } from "./clients/luma";
-import { normalizeCity, isIndianCity } from "./city-mapping";
+
 
 export interface IngestionResult {
 	totalFetched: number;
@@ -18,6 +16,16 @@ export interface IngestionResult {
 		count: number;
 		error?: string;
 	}>;
+}
+function normalizeCity(
+	city: string | null | undefined,
+): string | null {
+	if (!city) return null;
+
+	const trimmed = city.trim();
+	if (!trimmed) return null;
+
+	return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
 export async function runIngestionPipeline(): Promise<IngestionResult> {
@@ -82,18 +90,9 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 		};
 	}
 
-	const lumaEvents = allEvents.filter(
-		(e) => e.sourceName === "luma" && !e.description,
-	);
-	if (lumaEvents.length > 0) {
-		console.log(
-			`Enriching ${lumaEvents.length} Luma event descriptions...`,
-		);
-		await enrichLumaDescriptions(lumaEvents);
-	}
-
 	for (const event of allEvents) {
-		event.location.city = normalizeCity(event.location.city) || undefined;
+		event.location.city =
+			normalizeCity(event.location.city) || undefined;
 	}
 
 	const uniqueEvents = deduplicate(allEvents);
@@ -104,15 +103,7 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 	const indianTech: NormalizedEvent[] = [];
 	const others: NormalizedEvent[] = [];
 	for (const event of uniqueEvents) {
-		const city = event.location.city;
-		const isIndian =
-			isIndianCity(city) || !city;
-		const isTech = isEventAllowed(event);
-		if (isIndian && isTech) {
-			indianTech.push(event);
-		} else {
-			others.push(event);
-		}
+		indianTech.push(event);
 	}
 
 	const { MongoClient } = await import("mongodb");

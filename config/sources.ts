@@ -28,7 +28,7 @@ export const sourceConfigs: SourceConfig[] = [
 		id: "foss_united_ics",
 		name: "FOSS United (Calendar)",
 		type: "ICS",
-		enabled: true,
+		enabled: false,
 		config: {
 			url: "https://fossunited.org/api/method/fossunited.api.chapter.upcoming_events_ics",
 		},
@@ -37,7 +37,7 @@ export const sourceConfigs: SourceConfig[] = [
 		id: "foss_united_rss",
 		name: "FOSS United (RSS)",
 		type: "RSS",
-		enabled: true,
+		enabled: false,
 		config: {
 			url: "https://fossunited.org/events/timeline/rss.xml",
 		},
@@ -46,7 +46,7 @@ export const sourceConfigs: SourceConfig[] = [
 		id: "meetup",
 		name: "Meetup",
 		type: "API",
-		enabled: true,
+		enabled: false,
 		config: {
 			cities: [...SUPPORTED_CITIES],
 		},
@@ -55,7 +55,7 @@ export const sourceConfigs: SourceConfig[] = [
 		id: "eventbrite",
 		name: "Eventbrite",
 		type: "API",
-		enabled: true,
+		enabled: false,
 		config: {
 			cities: [...SUPPORTED_CITIES],
 		},

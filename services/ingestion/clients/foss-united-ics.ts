@@ -3,6 +3,15 @@ import { NormalizedEvent } from "@/types/event";
 import { makeEventId } from "@/lib/hash";
 import ical from "node-ical";
 import { cleanLocation } from "../location-cleaner";
+import {
+	DEFAULT_URL,
+	DEFAULT_EVENTS_URL,
+	HEADERS,
+	SOURCE_NAME,
+	ID_PREFIX,
+	DEFAULT_CATEGORY,
+	DEFAULT_LOCATION,
+} from "./foss-united-ics.constants";
 
 function extractCity(raw: string): string | undefined {
 	const first = raw.split("\n")[0];
@@ -18,13 +27,9 @@ export class FossUnitedIcsClient implements Ingester {
 	async fetch(
 		config: Record<string, unknown>,
 	): Promise<NormalizedEvent[]> {
-		const url =
-			(config.url as string) ||
-			"https://fossunited.org/api/method/fossunited.api.chapter.upcoming_events_ics";
+		const url = (config.url as string) || DEFAULT_URL;
 
-		const res = await fetch(url, {
-			headers: { "User-Agent": "WeekendsPlan/1.0" },
-		});
+		const res = await fetch(url, { headers: HEADERS });
 		if (!res.ok) {
 			throw new Error(
 				`FOSS United ICS fetch failed: HTTP ${res.status}`,
@@ -43,7 +48,7 @@ export class FossUnitedIcsClient implements Ingester {
 			if (!vevent.summary) continue;
 
 			const originalId = vevent.uid || uid;
-			const deterministicId = makeEventId("fossunited_ics", originalId);
+			const deterministicId = makeEventId(ID_PREFIX, originalId);
 
 			const rawLocation = vevent.location || "";
 			const cleaned = cleanLocation(
@@ -56,7 +61,7 @@ export class FossUnitedIcsClient implements Ingester {
 			const rawCategories = (vevent as any).categories;
 			const category = Array.isArray(rawCategories)
 				? rawCategories[0]
-				: rawCategories || "Open Source";
+				: rawCategories || DEFAULT_CATEGORY;
 
 			events.push({
 				_id: deterministicId,
@@ -69,12 +74,12 @@ export class FossUnitedIcsClient implements Ingester {
 					? new Date(vevent.end)
 					: undefined,
 				location: {
-					name: rawLocation ? cleaned.name : "Various Locations",
+					name: rawLocation ? cleaned.name : DEFAULT_LOCATION,
 					address: cleaned.address,
 					city,
 				},
-				sourceName: "foss_united",
-				originalUrl: vevent.url || "https://fossunited.org/events",
+				sourceName: SOURCE_NAME,
+				originalUrl: vevent.url || DEFAULT_EVENTS_URL,
 				imageUrl: undefined,
 				category,
 				updatedAt: new Date(),
