@@ -3,18 +3,20 @@ import { NormalizedEvent } from "@/types/event";
 import { makeEventId } from "@/lib/hash";
 import { cleanLocation } from "../location-cleaner";
 import {
-	CITY_SLUGS,
 	BASE_URL,
 	TIMEOUT_MS,
-	SEARCH_KEYWORDS,
 	HEADERS,
 	SOURCE_NAME,
 	ID_PREFIX,
 	DEFAULT_CATEGORY,
+	CITIES,
+	CATEGORIES,
 } from "./meetup.constants";
 
 const NEXT_DATA_RE =
 	/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/;
+
+// Actually found in the api response: <script id="__NEXT_DATA__" type="application/json">
 
 interface MeetupRawEvent {
 	id: string;
@@ -60,41 +62,55 @@ function extractEventsFromApollo(
 			val?.__typename === "Event" &&
 			val.title
 		) {
+			const photoRef =
+				val.featuredEventPhoto?.__ref ||
+				val.displayPhoto?.__ref;
+			if (photoRef) {
+				const photo = apollo[photoRef];
+				if (photo?.highResUrl) {
+					val.image = { url: photo.highResUrl };
+				}
+			}
 			events.push(val as MeetupRawEvent);
 		}
 	}
 	return events;
 }
 
-function meetupCitySlug(city: string): string {
-	return CITY_SLUGS[city] || `${city}--india`;
-}
-
 export class MeetupClient implements Ingester {
 	readonly id = "meetup";
 
 	async fetch(): Promise<NormalizedEvent[]> {
-		const results: NormalizedEvent[] = [];
-
-		for (const city of CITY_SLUGS.values) {
-			try {
-				const events = await this.fetchCity(city);
-				results.push(...events);
-			} catch (err) {
-				console.warn(
-					`Meetup [${city}]: ${err instanceof Error ? err.message : String(err)}`,
-				);
+		const combos: Array<{
+			cityVal: string;
+			catId: string;
+			catName: string;
+		}> = [];
+		for (const [catName, catId] of Object.entries(
+			CATEGORIES,
+		)) {
+			for (const cityVal of Object.values(CITIES)) {
+				combos.push({ cityVal, catId, catName });
 			}
 		}
 
-		return results;
+		const results = await Promise.allSettled(
+			combos.map((c) =>
+				this.fetchCityCategory(c.cityVal, c.catId, c.catName),
+			),
+		);
+
+		return results.flatMap((r) =>
+			r.status === "fulfilled" ? r.value : [],
+		);
 	}
 
-	private async fetchCity(
+	private async fetchCityCategory(
 		city: string,
+		categoryId: string,
+		categoryName: string,
 	): Promise<NormalizedEvent[]> {
-		const slug = meetupCitySlug(city);
-		const url = `${BASE_URL}?keywords=${SEARCH_KEYWORDS}&location=${slug}&source=EVENTS&eventType=inPerson,online`;
+		const url = `${BASE_URL}&location=${city}&categoryId=${categoryId}`;
 
 		const res = await fetch(url, {
 			headers: HEADERS,
@@ -118,12 +134,15 @@ export class MeetupClient implements Ingester {
 		}
 
 		const rawEvents = extractEventsFromApollo(apollo);
-		return rawEvents.map((e) => this.normalize(e, city));
+		return rawEvents.map((e: MeetupRawEvent) =>
+			this.normalize(e, city, categoryName),
+		);
 	}
 
 	private normalize(
 		raw: MeetupRawEvent,
 		city: string,
+		categoryName: string,
 	): NormalizedEvent {
 		const deterministicId = makeEventId(ID_PREFIX, raw.id);
 
@@ -153,11 +172,9 @@ export class MeetupClient implements Ingester {
 					: undefined,
 			},
 			sourceName: SOURCE_NAME,
-			originalUrl:
-				raw.eventUrl ||
-				`${BASE_URL}?keywords=tech&location=${city}`,
+			originalUrl: raw.eventUrl || "",
 			imageUrl: raw.image?.url || undefined,
-			category: DEFAULT_CATEGORY,
+			category: categoryName || DEFAULT_CATEGORY,
 			updatedAt: new Date(),
 		};
 	}
