@@ -23,7 +23,7 @@ export const sourceConfigs: SourceConfig[] = [
 		id: "meetup",
 		name: "Meetup",
 		type: "API",
-		enabled: false,
+		enabled: true,
 	},
 	{
 		id: "eventbrite",
