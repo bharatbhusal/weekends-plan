@@ -3,7 +3,6 @@ import { createIngester } from "./registry";
 import { NormalizedEvent } from "@/types/event";
 import { deduplicate } from "@/services/deduplicator";
 
-
 export interface IngestionResult {
 	totalFetched: number;
 	totalUnique: number;

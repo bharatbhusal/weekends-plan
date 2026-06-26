@@ -14,7 +14,10 @@ function pickMoreSpecific(a: string, b: string): string {
 	return a.length <= b.length ? a : b;
 }
 
-function calculateJaccardSimilarity(a: string, b: string): number {
+function calculateJaccardSimilarity(
+	a: string,
+	b: string,
+): number {
 	const tokenize = (s: string) =>
 		new Set(
 			s
@@ -43,7 +46,9 @@ function calculateJaccardSimilarity(a: string, b: string): number {
 	return intersection / union.size;
 }
 
-export function deduplicate(events: NormalizedEvent[]): NormalizedEvent[] {
+export function deduplicate(
+	events: NormalizedEvent[],
+): NormalizedEvent[] {
 	const unique: NormalizedEvent[] = [];
 	const twoHoursMs = 2 * 60 * 60 * 1000;
 

@@ -29,49 +29,52 @@ export function formatDateRange(
 }
 
 export function timeAgo(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - new Date(date).getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+	const now = new Date();
+	const diffMs = now.getTime() - new Date(date).getTime();
+	const diffMins = Math.floor(diffMs / 60000);
+	if (diffMins < 60) return `${diffMins}m ago`;
+	const diffHours = Math.floor(diffMins / 60);
+	if (diffHours < 24) return `${diffHours}h ago`;
+	const diffDays = Math.floor(diffHours / 24);
+	return `${diffDays}d ago`;
 }
 
 export function timeUntilEvent(
-  start: Date,
-  end?: Date,
+	start: Date,
+	end?: Date,
 ): { label: string; isLive: boolean } {
-  const now = new Date();
-  const startDate = new Date(start);
-  const endDate = end ? new Date(end) : null;
+	const now = new Date();
+	const startDate = new Date(start);
+	const endDate = end ? new Date(end) : null;
 
-  if (endDate && now >= startDate && now <= endDate) {
-    return { label: "Live", isLive: true };
-  }
+	if (endDate && now >= startDate && now <= endDate) {
+		return { label: "Live", isLive: true };
+	}
 
-  if (now > startDate) {
-    return { label: "", isLive: false };
-  }
+	if (now > startDate) {
+		return { label: "", isLive: false };
+	}
 
-  const diffMs = startDate.getTime() - now.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
+	const diffMs = startDate.getTime() - now.getTime();
+	const diffMins = Math.floor(diffMs / 60000);
+	const diffHours = Math.floor(diffMins / 60);
+	const diffDays = Math.floor(diffHours / 24);
 
-  if (diffDays >= 1) {
-    return { label: `In ${diffDays}d`, isLive: false };
-  }
-  if (diffHours >= 1) {
-    const mins = diffMins % 60;
-    return {
-      label: mins > 0 ? `In ${diffHours}h ${mins}m` : `In ${diffHours}h`,
-      isLive: false,
-    };
-  }
-  if (diffMins >= 1) {
-    return { label: `In ${diffMins}m`, isLive: false };
-  }
-  return { label: "Starting soon", isLive: false };
+	if (diffDays >= 1) {
+		return { label: `In ${diffDays}d`, isLive: false };
+	}
+	if (diffHours >= 1) {
+		const mins = diffMins % 60;
+		return {
+			label:
+				mins > 0
+					? `In ${diffHours}h ${mins}m`
+					: `In ${diffHours}h`,
+			isLive: false,
+		};
+	}
+	if (diffMins >= 30) {
+		return { label: `In ${diffMins}m`, isLive: false };
+	}
+	return { label: "Starting soon", isLive: false };
 }
