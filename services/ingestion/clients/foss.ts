@@ -15,7 +15,8 @@ import {
 	ID_PREFIX,
 	DEFAULT_CATEGORY,
 	DEFAULT_LOCATION,
-} from "./foss-united-rss.constants";
+	DEFAULT_EVENT_IMAGE,
+} from "./foss.constants";
 
 function extractFromHtml(
 	html: string,
@@ -77,8 +78,8 @@ function extractLinkFromDescription(
 	return match?.[1];
 }
 
-export class FossUnitedRssClient implements Ingester {
-	readonly id = "foss_united_rss";
+export class FossClient implements Ingester {
+	readonly id = "foss";
 
 	async fetch(): Promise<NormalizedEvent[]> {
 		const res = await fetch(DEFAULT_URL, {
@@ -170,7 +171,9 @@ export class FossUnitedRssClient implements Ingester {
 			},
 			sourceName: SOURCE_NAME,
 			originalUrl: eventLink,
-			imageUrl: item.image?.url || undefined,
+			imageUrl:
+				description.match(/<img[^>]+src="([^"]+)"/)?.[1] ||
+				DEFAULT_EVENT_IMAGE,
 			category: item.categories?.[0] || DEFAULT_CATEGORY,
 			updatedAt: new Date(),
 		};

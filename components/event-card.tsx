@@ -23,9 +23,7 @@ const sourceBadgeVariant = (source: string) => {
 	switch (source) {
 		case "luma":
 			return "luma" as const;
-		case "foss_united":
-		case "foss_united_ics":
-		case "foss_united_rss":
+		case "foss":
 			return "foss" as const;
 		case "meetup":
 			return "meetup" as const;
@@ -44,15 +42,7 @@ const SOURCE_FALLBACK: Record<
 		color: "from-purple-600/30 to-purple-900/20",
 		initial: "L",
 	},
-	foss_united: {
-		color: "from-emerald-600/30 to-emerald-900/20",
-		initial: "F",
-	},
-	foss_united_ics: {
-		color: "from-emerald-600/30 to-emerald-900/20",
-		initial: "F",
-	},
-	foss_united_rss: {
+	foss: {
 		color: "from-emerald-600/30 to-emerald-900/20",
 		initial: "F",
 	},

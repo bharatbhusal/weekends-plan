@@ -1,15 +1,12 @@
 import { Ingester } from "./base";
 import { LumaClient } from "./clients/luma";
-import { FossUnitedIcsClient } from "./clients/foss-united-ics";
-import { FossUnitedRssClient } from "./clients/foss-united-rss";
 import { MeetupClient } from "./clients/meetup";
 import { EventbriteClient } from "./clients/eventbrite";
-import { SourceConfig } from "@/types/event";
+import { FossClient } from "./clients/foss";
 
 const INGESTERS: Record<string, new () => Ingester> = {
 	luma: LumaClient,
-	foss_united_ics: FossUnitedIcsClient,
-	foss_united_rss: FossUnitedRssClient,
+	foss: FossClient,
 	meetup: MeetupClient,
 	eventbrite: EventbriteClient,
 };
