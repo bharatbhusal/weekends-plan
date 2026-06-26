@@ -1,6 +1,6 @@
 import { Ingester } from '../base';
 import { NormalizedEvent } from '@/types/event';
-import crypto from 'crypto';
+import { makeEventId } from '@/lib/hash';
 import { cleanLocation } from '../location-cleaner';
 
 interface RawGeoInfo {
@@ -154,10 +154,7 @@ export class LumaClient implements Ingester {
     const ev = entry.event;
     if (!ev.name || !ev.api_id) return null;
 
-    const deterministicId = crypto
-      .createHash('sha256')
-      .update(`luma_${ev.api_id}`)
-      .digest('hex');
+    const deterministicId = makeEventId('luma', ev.api_id);
 
     const imageUrl = ev.cover_url?.startsWith('http') ? ev.cover_url : undefined;
 

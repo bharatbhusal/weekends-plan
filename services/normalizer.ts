@@ -1,5 +1,3 @@
-import { NormalizedEvent } from "@/types/event";
-
 export function extractCity(
 	locationStr?: string,
 ): string | undefined {
@@ -18,26 +16,4 @@ export function truncateDescription(
 	);
 }
 
-export function sanitizeHtml(text: string): string {
-	return text
-		.replace(/<[^>]*>/g, "")
-		.replace(/&amp;/g, "&")
-		.replace(/&lt;/g, "<")
-		.replace(/&gt;/g, ">")
-		.replace(/&quot;/g, '"')
-		.replace(/&#39;/g, "'");
-}
-
-export function computeEventAgeHours(
-	event: NormalizedEvent,
-): number {
-	const now = Date.now();
-	const eventTime = new Date(event.startDateTime).getTime();
-	return (eventTime - now) / (1000 * 60 * 60);
-}
-
-export function isUpcoming(
-	event: NormalizedEvent,
-): boolean {
-	return computeEventAgeHours(event) > -24;
-}
+// ponytail: sanitizeHtml, computeEventAgeHours, isUpcoming removed — unused exports

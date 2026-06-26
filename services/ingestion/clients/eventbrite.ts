@@ -1,6 +1,6 @@
 import { Ingester } from '../base';
 import { NormalizedEvent } from '@/types/event';
-import crypto from 'crypto';
+import { makeEventId } from '@/lib/hash';
 import { cleanLocation } from '../location-cleaner';
 
 const JSONLD_RE = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g;
@@ -115,10 +115,7 @@ export class EventbriteClient implements Ingester {
 
   private normalize(raw: EbEvent, city: string): NormalizedEvent {
     const eventUrl = raw.url || '';
-    const deterministicId = crypto
-      .createHash('sha256')
-      .update(`eventbrite_${eventUrl}`)
-      .digest('hex');
+    const deterministicId = makeEventId('eventbrite', eventUrl);
 
     const venueName = raw.location?.name || '';
     const streetAddr = raw.location?.address?.streetAddress || '';

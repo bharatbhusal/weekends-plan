@@ -1,6 +1,6 @@
 import { Ingester } from "../base";
 import { NormalizedEvent } from "@/types/event";
-import crypto from "crypto";
+import { makeEventId } from "@/lib/hash";
 import ical from "node-ical";
 import { cleanLocation } from "../location-cleaner";
 
@@ -43,10 +43,7 @@ export class FossUnitedIcsClient implements Ingester {
 			if (!vevent.summary) continue;
 
 			const originalId = vevent.uid || uid;
-			const deterministicId = crypto
-				.createHash("sha256")
-				.update(`fossunited_ics_${originalId}`)
-				.digest("hex");
+			const deterministicId = makeEventId("fossunited_ics", originalId);
 
 			const rawLocation = vevent.location || "";
 			const cleaned = cleanLocation(

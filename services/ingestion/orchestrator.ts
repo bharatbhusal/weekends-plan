@@ -1,7 +1,7 @@
 import { sourceConfigs } from "@/config/sources";
 import { createIngester } from "./registry";
 import { NormalizedEvent } from "@/types/event";
-import { EventDeduplicator } from "@/services/deduplicator";
+import { deduplicate } from "@/services/deduplicator";
 import { isEventAllowed } from "./filter";
 import { enrichLumaDescriptions } from "./clients/luma";
 import { normalizeCity, isIndianCity } from "./city-mapping";
@@ -96,8 +96,7 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 		event.location.city = normalizeCity(event.location.city) || undefined;
 	}
 
-	const uniqueEvents =
-		EventDeduplicator.deduplicate(allEvents);
+	const uniqueEvents = deduplicate(allEvents);
 	console.log(
 		`Dedup: ${allEvents.length} -> ${uniqueEvents.length} unique events`,
 	);

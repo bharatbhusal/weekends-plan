@@ -1,6 +1,6 @@
 import { Ingester } from '../base';
 import { NormalizedEvent } from '@/types/event';
-import crypto from 'crypto';
+import { makeEventId } from '@/lib/hash';
 import FeedParser from 'feedparser';
 import { Readable } from 'stream';
 import { cleanLocation } from '../location-cleaner';
@@ -114,10 +114,7 @@ export class FossUnitedRssClient implements Ingester {
 
   private normalize(item: any): NormalizedEvent {
     const originalId = item.guid || item.link || item.title;
-    const deterministicId = crypto
-      .createHash('sha256')
-      .update(`fossunited_rss_${originalId}`)
-      .digest('hex');
+    const deterministicId = makeEventId('fossunited_rss', originalId);
 
     const description = item.description || '';
     const parsedDates = parseDateFromDescription(description);

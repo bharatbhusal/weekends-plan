@@ -1,5 +1,18 @@
 import { SourceConfig } from "@/types/event";
 
+const SUPPORTED_CITIES = [
+	"bengaluru",
+	"mumbai",
+	"new-delhi",
+	"hyderabad",
+	"pune",
+	"chennai",
+	"kolkata",
+	"ahmedabad",
+	"jaipur",
+	"lucknow",
+] as const;
+
 export const sourceConfigs: SourceConfig[] = [
 	{
 		id: "luma",
@@ -7,18 +20,7 @@ export const sourceConfigs: SourceConfig[] = [
 		type: "API",
 		enabled: true,
 		config: {
-			cities: [
-				"bengaluru",
-				"mumbai",
-				"new-delhi",
-				"hyderabad",
-				"pune",
-				"chennai",
-				"kolkata",
-				"ahmedabad",
-				"jaipur",
-				"lucknow",
-			],
+			cities: [...SUPPORTED_CITIES],
 			maxEventsPerCity: 40,
 		},
 	},
@@ -46,18 +48,7 @@ export const sourceConfigs: SourceConfig[] = [
 		type: "API",
 		enabled: true,
 		config: {
-			cities: [
-				"bengaluru",
-				"mumbai",
-				"new-delhi",
-				"hyderabad",
-				"pune",
-				"chennai",
-				"kolkata",
-				"ahmedabad",
-				"jaipur",
-				"lucknow",
-			],
+			cities: [...SUPPORTED_CITIES],
 		},
 	},
 	{
@@ -66,18 +57,7 @@ export const sourceConfigs: SourceConfig[] = [
 		type: "API",
 		enabled: true,
 		config: {
-			cities: [
-				"bengaluru",
-				"mumbai",
-				"new-delhi",
-				"hyderabad",
-				"pune",
-				"chennai",
-				"kolkata",
-				"ahmedabad",
-				"jaipur",
-				"lucknow",
-			],
+			cities: [...SUPPORTED_CITIES],
 		},
 	},
 ];
