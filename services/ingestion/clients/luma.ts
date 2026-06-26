@@ -50,18 +50,8 @@ interface RawResponse {
 const DESCRIPTION_URL_RE =
 	/<meta\s+(?:name|property)="description"\s+content="([^"]+)"/i;
 
-const MAX_TOTAL_EVENTS = 500;
-const PAGE_LIMIT = 50;
-
-// ponytail: fallback slugs for cities where the primary slug returns 0 events
-const FALLBACK_SLUGS: Record<string, string> = {
-	"new-delhi": "delhi",
-	bengaluru: "bangalore",
-	mumbai: "bombay",
-	chennai: "madras",
-	kolkata: "calcutta",
-	kochi: "cochin",
-};
+const MAX_TOTAL_EVENTS = 1000;
+const PAGE_LIMIT = 100;
 
 export async function enrichLumaDescriptions(
 	events: NormalizedEvent[],
@@ -99,7 +89,7 @@ export async function enrichLumaDescriptions(
 export class LumaClient implements Ingester {
 	readonly id = "luma";
 	private baseUrl =
-		"https://api.luma.com/discover/get-paginated-events";
+		"https://api.luma.com/discover/get-paginated-events?pagination_limit=500";
 
 	async fetch(
 		config: Record<string, unknown>,
@@ -110,16 +100,20 @@ export class LumaClient implements Ingester {
 
 		// Stage 1: global discover (no slug) — catches events not tied to any city page
 		try {
-			const globalEvents = await this.fetchGlobalDiscover();
+			const globalEvents = await this.fetchPaginated({});
 			for (const e of globalEvents) {
 				if (!seenIds.has(e._id)) {
 					seenIds.add(e._id);
 					allEvents.push(e);
 				}
 			}
-			console.log(`  -> ${globalEvents.length} events from global discover`);
+			console.log(
+				`  -> ${globalEvents.length} events from global discover`,
+			);
 		} catch (err) {
-			console.warn(`Luma global discover failed (non-fatal): ${err}`);
+			console.warn(
+				`Luma global discover failed (non-fatal): ${err}`,
+			);
 		}
 
 		// Stage 2: per-city queries — deep coverage for each Indian city
@@ -129,7 +123,9 @@ export class LumaClient implements Ingester {
 			for (let i = 0; i < cities.length; i += batchSize) {
 				const batch = cities.slice(i, i + batchSize);
 				const batchResults = await Promise.allSettled(
-					batch.map((city) => this.fetchCityWithFallback(city)),
+					batch.map((city) =>
+						this.fetchPaginated({ slug: city }),
+					),
 				);
 				for (let j = 0; j < batchResults.length; j++) {
 					const result = batchResults[j];
@@ -151,43 +147,27 @@ export class LumaClient implements Ingester {
 					`Luma: ${errors.length} city fetch(es) failed:\n${errors.join("\n")}`,
 				);
 			}
-
-			const cityTotal = allEvents.length - (allEvents.length - seenIds.size);
-			console.log(`  -> deduped to ${allEvents.length} unique events across ${cities.length} cities`);
 		}
 
 		return allEvents;
 	}
 
-	private async fetchGlobalDiscover(): Promise<NormalizedEvent[]> {
-		return this.fetchPaginated({});
-	}
-
-	private async fetchCityWithFallback(
-		city: string,
-	): Promise<NormalizedEvent[]> {
-		let events = await this.fetchPaginated({ slug: city });
-		if (events.length === 0) {
-			const fallback = FALLBACK_SLUGS[city];
-			if (fallback) {
-				console.log(`  -> "${city}" returned 0, trying fallback slug "${fallback}"`);
-				events = await this.fetchPaginated({ slug: fallback });
-			}
-		}
-		return events;
-	}
-
-	private async fetchPaginated(
-		params: { slug?: string },
-	): Promise<NormalizedEvent[]> {
+	private async fetchPaginated(params: {
+		slug?: string;
+	}): Promise<NormalizedEvent[]> {
 		const allEvents: NormalizedEvent[] = [];
 		let cursor: string | undefined;
 
 		while (allEvents.length < MAX_TOTAL_EVENTS) {
 			const url = new URL(this.baseUrl);
-			url.searchParams.set("pagination_limit", String(PAGE_LIMIT));
-			if (params.slug) url.searchParams.set("slug", params.slug);
-			if (cursor) url.searchParams.set("pagination_cursor", cursor);
+			url.searchParams.set(
+				"pagination_limit",
+				String(PAGE_LIMIT),
+			);
+			if (params.slug)
+				url.searchParams.set("slug", params.slug);
+			if (cursor)
+				url.searchParams.set("pagination_cursor", cursor);
 
 			const res = await fetch(url.toString(), {
 				headers: {
