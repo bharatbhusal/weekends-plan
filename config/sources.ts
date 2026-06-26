@@ -5,7 +5,7 @@ export const sourceConfigs: SourceConfig[] = [
 		id: "luma",
 		name: "Luma",
 		type: "API",
-		enabled: false,
+		enabled: true,
 	},
 	{
 		id: "foss",
@@ -17,7 +17,7 @@ export const sourceConfigs: SourceConfig[] = [
 		id: "meetup",
 		name: "Meetup",
 		type: "API",
-		enabled: false,
+		enabled: true,
 	},
 	{
 		id: "eventbrite",
