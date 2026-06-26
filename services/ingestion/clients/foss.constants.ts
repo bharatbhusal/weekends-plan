@@ -33,9 +33,11 @@ export const DEFAULT_URL =
 export const DEFAULT_EVENTS_URL =
 	"https://fossunited.org/events";
 
+export const DEFAULT_EVENT_IMAGE =
+	"https://fossunited.org/assets/fossunited/images/defaults/event_logo.png";
 export const HEADERS = { "User-Agent": "WeekendsPlan/1.0" };
 
-export const SOURCE_NAME = "foss_united";
-export const ID_PREFIX = "fossunited_rss";
+export const SOURCE_NAME = "foss";
+export const ID_PREFIX = "foss";
 export const DEFAULT_CATEGORY = "Technology";
 export const DEFAULT_LOCATION = "FOSS United";

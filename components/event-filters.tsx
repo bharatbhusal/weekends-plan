@@ -98,7 +98,10 @@ export function EventFilters({
 						<Globe className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
 						<select
 							className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-8 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring appearance-none bg-[length:16px] bg-[right_8px_center] bg-no-repeat"
-							style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23909090' viewBox='0 0 24 24'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e\")" }}
+							style={{
+								backgroundImage:
+									"url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23909090' viewBox='0 0 24 24'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e\")",
+							}}
 							value={filters.sources[0] || ""}
 							onChange={(e) =>
 								onFiltersChange({
@@ -110,14 +113,8 @@ export function EventFilters({
 							<option value="">All sources</option>
 							{sources.map((source) => (
 								<option key={source} value={source}>
-									{source === "foss_united"
-										? "FOSS United"
-										: source === "foss_united_ics"
-											? "FOSS United (Calendar)"
-											: source === "foss_united_rss"
-												? "FOSS United (RSS)"
-												: source.charAt(0).toUpperCase() +
-													source.slice(1)}
+									{source === "foss" &&
+										source.charAt(0).toUpperCase() + source.slice(1)}
 								</option>
 							))}
 						</select>
@@ -127,7 +124,10 @@ export function EventFilters({
 						<MapPin className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
 						<select
 							className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-8 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring appearance-none bg-[length:16px] bg-[right_8px_center] bg-no-repeat"
-							style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23909090' viewBox='0 0 24 24'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e\")" }}
+							style={{
+								backgroundImage:
+									"url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23909090' viewBox='0 0 24 24'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e\")",
+							}}
 							value={filters.cities[0] || ""}
 							onChange={(e) =>
 								onFiltersChange({
