@@ -2,10 +2,22 @@ import { Ingester } from "../base";
 import { NormalizedEvent } from "@/types/event";
 import { makeEventId } from "@/lib/hash";
 import { cleanLocation } from "../location-cleaner";
+import {
+	SLUGS,
+	BASE_URL,
+	EVENT_URL_BASE,
+	PAGE_LIMIT,
+	MAX_TOTAL_EVENTS,
+	HEADERS,
+	SOURCE_NAME,
+	ID_PREFIX,
+	DEFAULT_CATEGORY,
+	DEFAULT_LOCATION,
+} from "./luma.constants";
 
 interface RawGeoInfo {
 	city?: string;
-	city_state?: string;
+	region?: string;
 	country?: string;
 	short_address?: string;
 	full_address?: string;
@@ -29,16 +41,6 @@ interface RawEntry {
 	api_id: string;
 	event: RawEvent;
 	start_at: string;
-	hosts?: Array<{ name: string }>;
-	featured_city?: {
-		api_id: string;
-		name: string;
-		slug: string;
-	};
-	ticket_info?: {
-		is_free?: boolean;
-		price?: number | null;
-	};
 }
 
 interface RawResponse {
@@ -47,58 +49,16 @@ interface RawResponse {
 	next_cursor?: string;
 }
 
-const DESCRIPTION_URL_RE =
-	/<meta\s+(?:name|property)="description"\s+content="([^"]+)"/i;
-
-const MAX_TOTAL_EVENTS = 1000;
-const PAGE_LIMIT = 100;
-
-export async function enrichLumaDescriptions(
-	events: NormalizedEvent[],
-): Promise<void> {
-	const batchSize = 5;
-	for (let i = 0; i < events.length; i += batchSize) {
-		const batch = events.slice(i, i + batchSize);
-		await Promise.allSettled(
-			batch.map(async (event) => {
-				if (event.description) return;
-				try {
-					const res = await fetch(event.originalUrl, {
-						signal: AbortSignal.timeout(5000),
-						headers: {
-							"User-Agent":
-								"Mozilla/5.0 (compatible; WeekendsPlan/1.0)",
-						},
-					});
-					if (!res.ok) return;
-					const html = await res.text();
-					const m = html.match(DESCRIPTION_URL_RE);
-					if (m) {
-						event.description = m[1]
-							.replace(/&amp;/g, "&")
-							.trim();
-					}
-				} catch {
-					// best-effort
-				}
-			}),
-		);
-	}
-}
-
 export class LumaClient implements Ingester {
 	readonly id = "luma";
-	private baseUrl =
-		"https://api.luma.com/discover/get-paginated-events?pagination_limit=500";
 
 	async fetch(
-		config: Record<string, unknown>,
+		_config: Record<string, unknown>,
 	): Promise<NormalizedEvent[]> {
-		const cities = config.cities as string[] | undefined;
 		const allEvents: NormalizedEvent[] = [];
 		const seenIds = new Set<string>();
 
-		// Stage 1: global discover (no slug) — catches events not tied to any city page
+		// Stage 1: global discover (no slug) — catches events not tied to any slug
 		try {
 			const globalEvents = await this.fetchPaginated({});
 			for (const e of globalEvents) {
@@ -116,35 +76,22 @@ export class LumaClient implements Ingester {
 			);
 		}
 
-		// Stage 2: per-city queries — deep coverage for each Indian city
-		if (cities && cities.length > 0) {
-			const errors: string[] = [];
-			const batchSize = 4;
-			for (let i = 0; i < cities.length; i += batchSize) {
-				const batch = cities.slice(i, i + batchSize);
-				const batchResults = await Promise.allSettled(
-					batch.map((city) =>
-						this.fetchPaginated({ slug: city }),
-					),
-				);
-				for (let j = 0; j < batchResults.length; j++) {
-					const result = batchResults[j];
-					if (result.status === "fulfilled") {
-						for (const e of result.value) {
-							if (!seenIds.has(e._id)) {
-								seenIds.add(e._id);
-								allEvents.push(e);
-							}
-						}
-					} else {
-						errors.push(`[${batch[j]}] ${result.reason}`);
+		// Stage 2: by slug (cities + categories) in parallel
+		const slugResults = await Promise.allSettled(
+			SLUGS.map((slug) => this.fetchPaginated({ slug })),
+		);
+		for (let i = 0; i < slugResults.length; i++) {
+			const result = slugResults[i];
+			if (result.status === "fulfilled") {
+				for (const e of result.value) {
+					if (!seenIds.has(e._id)) {
+						seenIds.add(e._id);
+						allEvents.push(e);
 					}
 				}
-			}
-
-			if (errors.length > 0) {
+			} else {
 				console.warn(
-					`Luma: ${errors.length} city fetch(es) failed:\n${errors.join("\n")}`,
+					`Luma slug "${SLUGS[i]}" failed: ${result.reason}`,
 				);
 			}
 		}
@@ -159,24 +106,14 @@ export class LumaClient implements Ingester {
 		let cursor: string | undefined;
 
 		while (allEvents.length < MAX_TOTAL_EVENTS) {
-			const url = new URL(this.baseUrl);
-			url.searchParams.set(
-				"pagination_limit",
-				String(PAGE_LIMIT),
-			);
+			const url = new URL(BASE_URL);
+			url.searchParams.set("pagination_limit", String(PAGE_LIMIT));
 			if (params.slug)
 				url.searchParams.set("slug", params.slug);
 			if (cursor)
 				url.searchParams.set("pagination_cursor", cursor);
 
-			const res = await fetch(url.toString(), {
-				headers: {
-					"User-Agent":
-						"Mozilla/5.0 (compatible; WeekendsPlan/1.0)",
-					Origin: "https://luma.com",
-					Referer: "https://luma.com/discover",
-				},
-			});
+			const res = await fetch(url.toString(), { headers: HEADERS });
 
 			if (!res.ok) {
 				const body = await res.text().catch(() => "");
@@ -199,13 +136,11 @@ export class LumaClient implements Ingester {
 		return allEvents;
 	}
 
-	private normalize(
-		entry: RawEntry,
-	): NormalizedEvent | null {
+	private normalize(entry: RawEntry): NormalizedEvent | null {
 		const ev = entry.event;
 		if (!ev.name || !ev.api_id) return null;
 
-		const deterministicId = makeEventId("luma", ev.api_id);
+		const deterministicId = makeEventId(ID_PREFIX, ev.api_id);
 
 		const imageUrl = ev.cover_url?.startsWith("http")
 			? ev.cover_url
@@ -213,21 +148,17 @@ export class LumaClient implements Ingester {
 
 		const cityName =
 			ev.geo_address_info?.city ||
-			entry.featured_city?.name ||
+			ev.geo_address_info?.region ||
 			"";
 
 		const rawShort = ev.geo_address_info?.short_address || "";
 		const rawFull = ev.geo_address_info?.full_address || "";
 		const rawName = rawShort
 			? `${rawShort}${cityName && !rawShort.toLowerCase().includes(cityName.toLowerCase()) ? `, ${cityName}` : ""}`
-			: rawFull || cityName || "Online / Virtual";
+			: rawFull || cityName || DEFAULT_LOCATION;
 		const hasCoords = !!ev.coordinate;
 
-		const cleaned = cleanLocation(
-			rawName,
-			rawFull,
-			hasCoords,
-		);
+		const cleaned = cleanLocation(rawName, rawFull, hasCoords);
 
 		return {
 			_id: deterministicId,
@@ -246,12 +177,12 @@ export class LumaClient implements Ingester {
 						}
 					: undefined,
 			},
-			sourceName: "luma",
+			sourceName: SOURCE_NAME,
 			originalUrl: ev.url
-				? `https://lu.ma/${ev.url}`
-				: "https://lu.ma",
+				? `${EVENT_URL_BASE}/${ev.url}`
+				: EVENT_URL_BASE,
 			imageUrl,
-			category: "Community",
+			category: DEFAULT_CATEGORY,
 			updatedAt: new Date(),
 		};
 	}

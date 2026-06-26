@@ -2,6 +2,16 @@ import { Ingester } from '../base';
 import { NormalizedEvent } from '@/types/event';
 import { makeEventId } from '@/lib/hash';
 import { cleanLocation } from '../location-cleaner';
+import {
+	CITY_SLUGS,
+	CATEGORIES,
+	BASE_URL,
+	TIMEOUT_MS,
+	HEADERS,
+	SOURCE_NAME,
+	ID_PREFIX,
+	DEFAULT_CATEGORY,
+} from './eventbrite.constants';
 
 const JSONLD_RE = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g;
 
@@ -44,22 +54,8 @@ function parseJsonLdEvents(html: string): EbEvent[] {
 }
 
 function ebCitySlug(city: string): string {
-  const map: Record<string, string> = {
-    bengaluru: "india--bengaluru",
-    mumbai: "india--mumbai",
-    "new-delhi": "india--new-delhi",
-    hyderabad: "india--hyderabad",
-    pune: "india--pune",
-    chennai: "india--chennai",
-    kolkata: "india--kolkata",
-    ahmedabad: "india--ahmedabad",
-    jaipur: "india--jaipur",
-    lucknow: "india--lucknow",
-  };
-  return map[city] || `india--${city}`;
+  return CITY_SLUGS[city] || `india--${city}`;
 }
-
-const CATEGORIES = ["science--tech", "tech", "business--professional"];
 
 export class EventbriteClient implements Ingester {
   readonly id = 'eventbrite';
@@ -89,14 +85,11 @@ export class EventbriteClient implements Ingester {
     seenUrls: Set<string>,
   ): Promise<NormalizedEvent[]> {
     const slug = ebCitySlug(city);
-    const url = `https://www.eventbrite.com/d/${slug}/${category}/`;
+    const url = `${BASE_URL}${slug}/${category}/`;
 
     const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; WeekendsPlan/1.0)',
-        Accept: 'text/html',
-      },
-      signal: AbortSignal.timeout(15000),
+      headers: HEADERS,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
 
     if (!res.ok) {
@@ -115,7 +108,7 @@ export class EventbriteClient implements Ingester {
 
   private normalize(raw: EbEvent, city: string): NormalizedEvent {
     const eventUrl = raw.url || '';
-    const deterministicId = makeEventId('eventbrite', eventUrl);
+    const deterministicId = makeEventId(ID_PREFIX, eventUrl);
 
     const venueName = raw.location?.name || '';
     const streetAddr = raw.location?.address?.streetAddress || '';
@@ -137,10 +130,10 @@ export class EventbriteClient implements Ingester {
         address: cleaned.address,
         city: raw.location?.address?.addressLocality || city,
       },
-      sourceName: 'eventbrite',
+      sourceName: SOURCE_NAME,
       originalUrl: eventUrl,
       imageUrl: imgUrl,
-      category: 'Community',
+      category: DEFAULT_CATEGORY,
       updatedAt: new Date(),
     };
   }

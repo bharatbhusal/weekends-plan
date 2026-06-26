@@ -2,7 +2,6 @@ import { sourceConfigs } from "@/config/sources";
 import { createIngester } from "./registry";
 import { NormalizedEvent } from "@/types/event";
 import { deduplicate } from "@/services/deduplicator";
-import { enrichLumaDescriptions } from "./clients/luma";
 
 export interface IngestionResult {
 	totalFetched: number;
@@ -88,16 +87,6 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 			otherModified: 0,
 			sourceResults,
 		};
-	}
-
-	const lumaEvents = allEvents.filter(
-		(e) => e.sourceName === "luma" && !e.description,
-	);
-	if (lumaEvents.length > 0) {
-		console.log(
-			`Enriching ${lumaEvents.length} Luma event descriptions...`,
-		);
-		await enrichLumaDescriptions(lumaEvents);
 	}
 
 	for (const event of allEvents) {

@@ -2,6 +2,16 @@ import { Ingester } from "../base";
 import { NormalizedEvent } from "@/types/event";
 import { makeEventId } from "@/lib/hash";
 import { cleanLocation } from "../location-cleaner";
+import {
+	CITY_SLUGS,
+	BASE_URL,
+	TIMEOUT_MS,
+	SEARCH_KEYWORDS,
+	HEADERS,
+	SOURCE_NAME,
+	ID_PREFIX,
+	DEFAULT_CATEGORY,
+} from "./meetup.constants";
 
 const NEXT_DATA_RE =
 	/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/;
@@ -57,23 +67,7 @@ function extractEventsFromApollo(
 }
 
 function meetupCitySlug(city: string): string {
-	const map: Record<string, string> = {
-		bengaluru: "bengaluru",
-		mumbai: "mumbai",
-		"new-delhi": "new-delhi--india",
-		hyderabad: "hyderabad",
-		pune: "pune",
-		chennai: "chennai",
-		kolkata: "kolkata",
-		ahmedabad: "ahmedabad",
-		jaipur: "jaipur",
-		lucknow: "lucknow",
-		gurugram: "gurugram",
-		noida: "noida",
-		kochi: "kochi",
-		chandigarh: "chandigarh",
-	};
-	return map[city] || `${city}--india`;
+	return CITY_SLUGS[city] || `${city}--india`;
 }
 
 export class MeetupClient implements Ingester {
@@ -103,15 +97,11 @@ export class MeetupClient implements Ingester {
 		city: string,
 	): Promise<NormalizedEvent[]> {
 		const slug = meetupCitySlug(city);
-		const url = `https://www.meetup.com/find/?keywords=tech,workshop,hackathon,conference,startup&location=${slug}&source=EVENTS&eventType=inPerson,online`;
+		const url = `${BASE_URL}?keywords=${SEARCH_KEYWORDS}&location=${slug}&source=EVENTS&eventType=inPerson,online`;
 
 		const res = await fetch(url, {
-			headers: {
-				"User-Agent":
-					"Mozilla/5.0 (compatible; WeekendsPlan/1.0)",
-				Accept: "text/html",
-			},
-			signal: AbortSignal.timeout(15000),
+			headers: HEADERS,
+			signal: AbortSignal.timeout(TIMEOUT_MS),
 		});
 
 		if (!res.ok) {
@@ -138,7 +128,7 @@ export class MeetupClient implements Ingester {
 		raw: MeetupRawEvent,
 		city: string,
 	): NormalizedEvent {
-		const deterministicId = makeEventId("meetup", raw.id);
+		const deterministicId = makeEventId(ID_PREFIX, raw.id);
 
 		const venueName =
 			raw.venue?.name || raw.venue?.address || "";
@@ -165,12 +155,12 @@ export class MeetupClient implements Ingester {
 					? { lat: raw.venue!.lat!, lng: raw.venue!.lng! }
 					: undefined,
 			},
-			sourceName: "meetup",
+			sourceName: SOURCE_NAME,
 			originalUrl:
 				raw.eventUrl ||
-				`https://www.meetup.com/find/?keywords=tech&location=${city}`,
+				`${BASE_URL}?keywords=tech&location=${city}`,
 			imageUrl: raw.image?.url || undefined,
-			category: "Meetup",
+			category: DEFAULT_CATEGORY,
 			updatedAt: new Date(),
 		};
 	}

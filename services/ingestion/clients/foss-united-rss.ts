@@ -4,24 +4,18 @@ import { makeEventId } from '@/lib/hash';
 import FeedParser from 'feedparser';
 import { Readable } from 'stream';
 import { cleanLocation } from '../location-cleaner';
-
-const MONTHS: Record<string, number> = {
-  jan: 0, january: 0,
-  feb: 1, february: 1,
-  mar: 2, march: 2,
-  apr: 3, april: 3,
-  may: 4,
-  jun: 5, june: 5,
-  jul: 6, july: 6,
-  aug: 7, august: 7,
-  sep: 8, september: 8,
-  oct: 9, october: 9,
-  nov: 10, november: 10,
-  dec: 11, december: 11,
-};
-
-const DATE_RE = /^(\d{1,2})\s+(\w+)\s+(\d{4}),\s*(\d{1,2}):(\d{2})\s+(AM|PM)$/i;
-const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+import {
+	MONTHS,
+	DATE_RE,
+	IST_OFFSET_MS,
+	DEFAULT_URL,
+	DEFAULT_EVENTS_URL,
+	HEADERS,
+	SOURCE_NAME,
+	ID_PREFIX,
+	DEFAULT_CATEGORY,
+	DEFAULT_LOCATION,
+} from './foss-united-rss.constants';
 
 function extractFromHtml(html: string, label: string): string | undefined {
   const regex = new RegExp(
@@ -77,13 +71,9 @@ export class FossUnitedRssClient implements Ingester {
   readonly id = 'foss_united_rss';
 
   async fetch(config: Record<string, unknown>): Promise<NormalizedEvent[]> {
-    const url =
-      (config.url as string) ||
-      'https://fossunited.org/events/timeline/rss.xml';
+    const url = (config.url as string) || DEFAULT_URL;
 
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'WeekendsPlan/1.0' },
-    });
+    const res = await fetch(url, { headers: HEADERS });
     if (!res.ok) {
       throw new Error(`FOSS United RSS fetch failed: HTTP ${res.status}`);
     }
@@ -114,14 +104,14 @@ export class FossUnitedRssClient implements Ingester {
 
   private normalize(item: any): NormalizedEvent {
     const originalId = item.guid || item.link || item.title;
-    const deterministicId = makeEventId('fossunited_rss', originalId);
+    const deterministicId = makeEventId(ID_PREFIX, originalId);
 
     const description = item.description || '';
     const parsedDates = parseDateFromDescription(description);
 
     const startDateTime = parsedDates.start || new Date(item.pubDate || item.date || new Date());
 
-    const locationName = extractFromHtml(description, 'Location') || 'FOSS United';
+    const locationName = extractFromHtml(description, 'Location') || DEFAULT_LOCATION;
     const chapterRaw = extractFromHtml(description, 'Chapter') || '';
 
     let city: string | undefined;
@@ -133,7 +123,7 @@ export class FossUnitedRssClient implements Ingester {
     const cleaned = cleanLocation(locationName, locationName, false);
 
     const eventLink =
-      extractLinkFromDescription(description) || item.link || 'https://fossunited.org/events';
+      extractLinkFromDescription(description) || item.link || DEFAULT_EVENTS_URL;
 
     const cleanTitle = item.title.replace(/\s*–\s+[^–]+$/, '').trim() || item.title;
 
@@ -148,10 +138,10 @@ export class FossUnitedRssClient implements Ingester {
         address: cleaned.address,
         city,
       },
-      sourceName: 'foss_united',
+      sourceName: SOURCE_NAME,
       originalUrl: eventLink,
       imageUrl: item.image?.url || undefined,
-      category: item.categories?.[0] || 'Technology',
+      category: item.categories?.[0] || DEFAULT_CATEGORY,
       updatedAt: new Date(),
     };
   }

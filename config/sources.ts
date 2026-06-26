@@ -1,9 +1,9 @@
 import { SourceConfig } from "@/types/event";
 
 const SUPPORTED_CITIES = [
-	// "new-delhi",
-	// "Hyderabad",
 	"Bengaluru",
+	"Mumbai",
+	"New Delhi",
 ] as const;
 
 export const sourceConfigs: SourceConfig[] = [
