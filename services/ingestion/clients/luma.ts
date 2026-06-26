@@ -52,9 +52,7 @@ interface RawResponse {
 export class LumaClient implements Ingester {
 	readonly id = "luma";
 
-	async fetch(
-		_config: Record<string, unknown>,
-	): Promise<NormalizedEvent[]> {
+	async fetch(): Promise<NormalizedEvent[]> {
 		const allEvents: NormalizedEvent[] = [];
 		const seenIds = new Set<string>();
 
@@ -107,13 +105,18 @@ export class LumaClient implements Ingester {
 
 		while (allEvents.length < MAX_TOTAL_EVENTS) {
 			const url = new URL(BASE_URL);
-			url.searchParams.set("pagination_limit", String(PAGE_LIMIT));
+			url.searchParams.set(
+				"pagination_limit",
+				String(PAGE_LIMIT),
+			);
 			if (params.slug)
 				url.searchParams.set("slug", params.slug);
 			if (cursor)
 				url.searchParams.set("pagination_cursor", cursor);
 
-			const res = await fetch(url.toString(), { headers: HEADERS });
+			const res = await fetch(url.toString(), {
+				headers: HEADERS,
+			});
 
 			if (!res.ok) {
 				const body = await res.text().catch(() => "");
@@ -136,7 +139,9 @@ export class LumaClient implements Ingester {
 		return allEvents;
 	}
 
-	private normalize(entry: RawEntry): NormalizedEvent | null {
+	private normalize(
+		entry: RawEntry,
+	): NormalizedEvent | null {
 		const ev = entry.event;
 		if (!ev.name || !ev.api_id) return null;
 
@@ -158,7 +163,11 @@ export class LumaClient implements Ingester {
 			: rawFull || cityName || DEFAULT_LOCATION;
 		const hasCoords = !!ev.coordinate;
 
-		const cleaned = cleanLocation(rawName, rawFull, hasCoords);
+		const cleaned = cleanLocation(
+			rawName,
+			rawFull,
+			hasCoords,
+		);
 
 		return {
 			_id: deterministicId,

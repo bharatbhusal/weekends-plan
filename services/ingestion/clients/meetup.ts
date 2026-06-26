@@ -73,13 +73,10 @@ function meetupCitySlug(city: string): string {
 export class MeetupClient implements Ingester {
 	readonly id = "meetup";
 
-	async fetch(
-		config: Record<string, unknown>,
-	): Promise<NormalizedEvent[]> {
-		const cities = (config.cities as string[]) || [];
+	async fetch(): Promise<NormalizedEvent[]> {
 		const results: NormalizedEvent[] = [];
 
-		for (const city of cities) {
+		for (const city of CITY_SLUGS.values) {
 			try {
 				const events = await this.fetchCity(city);
 				results.push(...events);

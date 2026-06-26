@@ -25,5 +25,4 @@ export interface SourceConfig {
 	name: string;
 	type: IngestType;
 	enabled: boolean;
-	config: Record<string, unknown>;
 }

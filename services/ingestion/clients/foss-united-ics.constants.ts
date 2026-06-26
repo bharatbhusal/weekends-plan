@@ -1,6 +1,7 @@
 export const DEFAULT_URL =
 	"https://fossunited.org/api/method/fossunited.api.chapter.upcoming_events_ics";
-export const DEFAULT_EVENTS_URL = "https://fossunited.org/events";
+export const DEFAULT_EVENTS_URL =
+	"https://fossunited.org/events";
 
 export const HEADERS = { "User-Agent": "WeekendsPlan/1.0" };
 

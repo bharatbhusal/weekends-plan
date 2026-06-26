@@ -38,7 +38,7 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 
 	const tasks = enabledSources.map(async (source) => {
 		try {
-			const ingester = createIngester(source);
+			const ingester = createIngester(source.id);
 			if (!ingester) {
 				throw new Error(
 					`No ingester registered for source: ${source.id}`,
@@ -48,7 +48,7 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 			console.log(
 				`Fetching from [${source.name}] (${source.type})...`,
 			);
-			const events = await ingester.fetch(source.config);
+			const events = await ingester.fetch();
 			console.log(
 				`  -> ${events.length} events from ${source.name}`,
 			);

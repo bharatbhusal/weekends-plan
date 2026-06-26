@@ -15,7 +15,10 @@ import {
 
 function extractCity(raw: string): string | undefined {
 	const first = raw.split("\n")[0];
-	const parts = first.split(",").map((s) => s.trim()).filter(Boolean);
+	const parts = first
+		.split(",")
+		.map((s) => s.trim())
+		.filter(Boolean);
 	const last = parts[parts.length - 1];
 	if (!last || /https?:\/\//i.test(last)) return undefined;
 	return last;
@@ -24,12 +27,10 @@ function extractCity(raw: string): string | undefined {
 export class FossUnitedIcsClient implements Ingester {
 	readonly id = "foss_united_ics";
 
-	async fetch(
-		config: Record<string, unknown>,
-	): Promise<NormalizedEvent[]> {
-		const url = (config.url as string) || DEFAULT_URL;
-
-		const res = await fetch(url, { headers: HEADERS });
+	async fetch(): Promise<NormalizedEvent[]> {
+		const res = await fetch(DEFAULT_URL, {
+			headers: HEADERS,
+		});
 		if (!res.ok) {
 			throw new Error(
 				`FOSS United ICS fetch failed: HTTP ${res.status}`,
@@ -48,7 +49,10 @@ export class FossUnitedIcsClient implements Ingester {
 			if (!vevent.summary) continue;
 
 			const originalId = vevent.uid || uid;
-			const deterministicId = makeEventId(ID_PREFIX, originalId);
+			const deterministicId = makeEventId(
+				ID_PREFIX,
+				originalId,
+			);
 
 			const rawLocation = vevent.location || "";
 			const cleaned = cleanLocation(
