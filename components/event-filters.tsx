@@ -113,8 +113,7 @@ export function EventFilters({
 							<option value="">All sources</option>
 							{sources.map((source) => (
 								<option key={source} value={source}>
-									{source === "foss" &&
-										source.charAt(0).toUpperCase() + source.slice(1)}
+									{source.charAt(0).toUpperCase() + source.slice(1)}
 								</option>
 							))}
 						</select>
