@@ -1,6 +1,7 @@
 import { Ingester } from "../base";
 import { NormalizedEvent } from "@/types/event";
 import { makeEventId } from "@/lib/hash";
+import { matchCity } from "@/lib/city-aliases";
 import FeedParser from "feedparser";
 import { Readable } from "stream";
 import { cleanLocation } from "../location-cleaner";
@@ -78,6 +79,34 @@ function extractLinkFromDescription(
 	return match?.[1];
 }
 
+// ponytail: inline helpers, no need for a separate module
+
+function extractCityFromChapter(chapter: string): string | null {
+	const m = chapter.match(
+		/^([A-Za-z\s]+?)\s*-?\s*City\s+Community$/i,
+	);
+	return m ? m[1].trim() : null;
+}
+
+function extractCityFromUrl(url: string): string | null {
+	const m = url.match(/\/c\/([^/]+)/);
+	return m ? matchCity(m[1]) : null;
+}
+
+function isOnlineEvent(
+	category: string | undefined,
+	typeHtml: string,
+	locationName: string,
+	title: string,
+): boolean {
+	return (
+		(category || "").toLowerCase() === "online" ||
+		typeHtml.toLowerCase() === "online" ||
+		locationName.toLowerCase() === "online" ||
+		title.toLowerCase().includes("– online")
+	);
+}
+
 export class FossClient implements Ingester {
 	readonly id = "foss";
 
@@ -134,14 +163,8 @@ export class FossClient implements Ingester {
 			DEFAULT_LOCATION;
 		const chapterRaw =
 			extractFromHtml(description, "Chapter") || "";
-
-		let city: string | undefined;
-		if (chapterRaw) {
-			const chapterCity = chapterRaw
-				.replace(/-City Community$/, "")
-				.trim();
-			if (chapterCity) city = chapterCity;
-		}
+		const typeHtml =
+			extractFromHtml(description, "Type") || "";
 
 		const cleaned = cleanLocation(
 			locationName,
@@ -158,6 +181,19 @@ export class FossClient implements Ingester {
 			item.title.replace(/\s*–\s+[^–]+$/, "").trim() ||
 			item.title;
 
+		const city =
+			extractCityFromChapter(chapterRaw) ||
+			extractCityFromUrl(eventLink) ||
+			matchCity(locationName) ||
+			(isOnlineEvent(
+				item.categories?.[0],
+				typeHtml,
+				locationName,
+				item.title,
+			)
+				? "Online"
+				: undefined);
+
 		return {
 			_id: deterministicId,
 			title: cleanTitle,
@@ -172,7 +208,7 @@ export class FossClient implements Ingester {
 			sourceName: SOURCE_NAME,
 			originalUrl: eventLink,
 			imageUrl:
-				description.match(/<img[^>]+src="([^"]+)"/)?.[1] ||
+				description.match(/<img[^>]+src="([^"]+)"/i)?.[1] ||
 				DEFAULT_EVENT_IMAGE,
 			category: item.categories?.[0] || DEFAULT_CATEGORY,
 			updatedAt: new Date(),
