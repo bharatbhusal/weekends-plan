@@ -35,7 +35,11 @@ export interface EventSection {
 export function getSection(
 	date: Date,
 	now: Date,
+	endDate?: Date,
 ): EventSection {
+	if (endDate && date <= now && endDate >= now)
+		return { label: "Live", key: "live" };
+
 	const today = startOfDay(now);
 	const eventDay = startOfDay(date);
 
@@ -65,6 +69,7 @@ export function getSection(
 }
 
 export const SECTION_ORDER = [
+	"live",
 	"today",
 	"tomorrow",
 	"this-week",

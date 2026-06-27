@@ -2,6 +2,7 @@ import { sourceConfigs } from "@/config/sources";
 import { createIngester } from "./registry";
 import { NormalizedEvent } from "@/types/event";
 import { deduplicate } from "@/services/deduplicator";
+import { generalizeCity } from "@/lib/city-aliases";
 
 export interface IngestionResult {
 	totalFetched: number;
@@ -16,17 +17,6 @@ export interface IngestionResult {
 		error?: string;
 	}>;
 }
-function normalizeCity(
-	city: string | null | undefined,
-): string | null {
-	if (!city) return null;
-
-	const trimmed = city.trim();
-	if (!trimmed) return null;
-
-	return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-}
-
 export async function runIngestionPipeline(): Promise<IngestionResult> {
 	console.log("=== Starting ingestion pipeline ===");
 
@@ -91,7 +81,7 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 
 	for (const event of allEvents) {
 		event.location.city =
-			normalizeCity(event.location.city) || undefined;
+			generalizeCity(event.location.city) || undefined;
 	}
 
 	const uniqueEvents = deduplicate(allEvents);

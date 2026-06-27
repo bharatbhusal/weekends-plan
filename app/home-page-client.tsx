@@ -103,6 +103,9 @@ export function HomePageClient({
 			const section = getSection(
 				new Date(event.startDateTime),
 				now,
+				event.endDateTime
+					? new Date(event.endDateTime)
+					: undefined,
 			);
 			let list = map.get(section.key);
 			if (!list) {
@@ -128,6 +131,9 @@ export function HomePageClient({
 				const label = getSection(
 					new Date(events[0].startDateTime),
 					now,
+					events[0].endDateTime
+						? new Date(events[0].endDateTime)
+						: undefined,
 				).label;
 				ordered.push({ label, key, events });
 			}
@@ -138,6 +144,9 @@ export function HomePageClient({
 				const label = getSection(
 					new Date(events[0].startDateTime),
 					now,
+					events[0].endDateTime
+						? new Date(events[0].endDateTime)
+						: undefined,
 				).label;
 				ordered.push({ label, key, events });
 			}
@@ -155,6 +164,7 @@ export function HomePageClient({
 
 		for (const section of sections) {
 			if (
+				section.key === "live" ||
 				section.key === "today" ||
 				section.key === "tomorrow" ||
 				section.key === "this-week"

@@ -1,5 +1,6 @@
 import { getEvents } from '@/lib/events';
 import { HomePageClient } from '@/app/home-page-client';
+import { generalizeCity } from '@/lib/city-aliases';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,7 @@ export default async function OthersPage() {
   const cities = Array.from(
     new Set(
       events
-        .map((e) => e.location.city)
+        .map((e) => generalizeCity(e.location.city))
         .filter((c): c is string => !!c)
     )
   );
