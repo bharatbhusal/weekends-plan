@@ -92,7 +92,12 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 	const indianTech: NormalizedEvent[] = [];
 	const others: NormalizedEvent[] = [];
 	for (const event of uniqueEvents) {
-		indianTech.push(event);
+		if (event.location.city) {
+			indianTech.push(event);
+		} else {
+			event.location.city = event.location.name || event.location.address || undefined;
+			others.push(event);
+		}
 	}
 
 	const { MongoClient } = await import("mongodb");
@@ -109,6 +114,14 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 	try {
 		await client.connect();
 		const db = client.db("events_db");
+
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const [pastMain, pastOther] = await Promise.all([
+			db.collection("municipal_events").deleteMany({ startDateTime: { $lt: today } }),
+			db.collection("other_events").deleteMany({ startDateTime: { $lt: today } }),
+		]);
+		console.log(`Cleaned up ${pastMain.deletedCount} past events from municipal_events, ${pastOther.deletedCount} from other_events`);
 
 		const writeBatch = async (
 			events: NormalizedEvent[],
