@@ -302,7 +302,13 @@ export function HomePageClient({
 
 	// Month changes in Calendar View
 	const goToPrevMonth = useCallback(() => {
-		setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
+		setCurrentMonth((prev) => {
+			const now = new Date()
+			const minDate = new Date(now.getFullYear(), now.getMonth(), 1)
+			const newDate = new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
+			if (newDate < minDate) return prev
+			return newDate
+		})
 	}, [])
 
 	const goToNextMonth = useCallback(() => {
@@ -327,6 +333,13 @@ export function HomePageClient({
 		},
 		[],
 	)
+
+	const isCurrentOrPastMonth = useMemo(() => {
+		const now = new Date()
+		const currentActual = new Date(now.getFullYear(), now.getMonth(), 1)
+		const viewMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
+		return viewMonth <= currentActual
+	}, [currentMonth])
 
 	const isCalendar = view === "calendar"
 	const totalVisible = isCalendar ? calendarEventsCount : visibleEvents
@@ -389,7 +402,13 @@ export function HomePageClient({
 									<div className="flex items-center justify-between gap-2 order-1 sm:order-2 w-full sm:w-auto">
 										<button
 											onClick={goToPrevMonth}
-											className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-border text-foreground hover:bg-accent transition-colors"
+											disabled={isCurrentOrPastMonth}
+											className={cn(
+												"inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border transition-colors",
+												isCurrentOrPastMonth
+													? "border-border/50 text-muted-foreground/50 cursor-not-allowed"
+													: "border-border text-foreground hover:bg-accent"
+											)}
 										>
 											<ChevronLeft className="h-4 w-4" />
 											Previous
