@@ -1,22 +1,22 @@
-import { NormalizedEvent } from '@/types/event'
-import { EventCard } from './event-card'
+import { NormalizedEvent } from "@/types/event"
+import { EventCard } from "./event-card"
 
-interface EventGridProps {
+interface EventListProps {
   events: NormalizedEvent[]
   watchedIds?: string[]
   onToggleWatch?: (id: string) => void
 }
 
-export function EventGrid({ events, watchedIds = [], onToggleWatch }: EventGridProps) {
+export function EventList({ events, watchedIds = [], onToggleWatch }: EventListProps) {
   if (events.length === 0) return null
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {events.map((event) => (
         <EventCard
           key={event._id}
           event={event}
-          variant="box"
+          variant="line"
           isWatched={watchedIds.includes(event._id)}
           onToggleWatch={onToggleWatch}
         />

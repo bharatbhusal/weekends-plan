@@ -1,9 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
+
+export const viewport: Viewport = {
+	themeColor: "#0a0a0a",
+};
 
 export const metadata: Metadata = {
 	title: "Weekends Plan — Event Aggregator",
@@ -23,7 +27,6 @@ export const metadata: Metadata = {
 		description:
 			"Discover events across India — aggregated from Luma, FOSS, and more. Find tech meetups, workshops, and community events in your city.",
 	},
-	themeColor: "#0a0a0a",
 	icons: {
 		apple: "/icon.png",
 	},

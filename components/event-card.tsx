@@ -1,38 +1,42 @@
-import Link from "next/link";
-import { NormalizedEvent } from "@/types/event";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import Link from "next/link"
+import { NormalizedEvent } from "@/types/event"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
 	Calendar,
 	MapPin,
 	ExternalLink,
-} from "lucide-react";
+	Star,
+} from "lucide-react"
 import {
 	formatDateRange,
 	timeUntilEvent,
-} from "@/lib/utils";
-import { marked } from "marked";
-import Image from "next/image";
+	cn,
+} from "@/lib/utils"
+import { marked } from "marked"
+import Image from "next/image"
 
 interface EventCardProps {
-	event: NormalizedEvent;
-	variant?: "default" | "compact" | "featured";
+	event: NormalizedEvent
+	variant?: "box" | "line" | "default" | "compact" | "featured"
+	isWatched?: boolean
+	onToggleWatch?: (id: string) => void
 }
 
 const sourceBadgeVariant = (source: string) => {
-	switch (source) {
+	switch (source.toLowerCase()) {
 		case "luma":
-			return "luma" as const;
+			return "luma" as const
 		case "foss":
-			return "foss" as const;
+			return "foss" as const
 		case "meetup":
-			return "meetup" as const;
+			return "meetup" as const
 		case "eventbrite":
-			return "eventbrite" as const;
+			return "eventbrite" as const
 		default:
-			return "secondary" as const;
+			return "secondary" as const
 	}
-};
+}
 
 const SOURCE_FALLBACK: Record<
 	string,
@@ -54,26 +58,26 @@ const SOURCE_FALLBACK: Record<
 		color: "from-orange-600/30 to-orange-900/20",
 		initial: "E",
 	},
-};
+}
 
 function getFallback(source: string) {
 	return (
-		SOURCE_FALLBACK[source] || {
+		SOURCE_FALLBACK[source.toLowerCase()] || {
 			color: "from-muted to-muted/50",
 			initial: "?",
 		}
-	);
+	)
 }
 
 function TimeBadge({
 	start,
 	end,
 }: {
-	start: Date;
-	end?: Date;
+	start: Date
+	end?: Date
 }) {
-	const { label, isLive } = timeUntilEvent(start, end);
-	if (!label) return null;
+	const { label, isLive } = timeUntilEvent(start, end)
+	if (!label && !isLive) return null
 
 	if (isLive) {
 		return (
@@ -81,34 +85,43 @@ function TimeBadge({
 				<span className="mr-1 h-1.5 w-1.5 rounded-full bg-red-400" />
 				Live
 			</Badge>
-		);
+		)
 	}
 
 	return (
 		<Badge className="bg-slate-600/20 text-slate-400 border-slate-600/30 text-xs">
 			{label}
 		</Badge>
-	);
+	)
 }
 
 function renderMarkdown(text: string): string {
 	try {
-		return marked.parse(text, { async: false }) as string;
+		return marked.parse(text, { async: false }) as string
 	} catch {
-		return text;
+		return text
 	}
 }
 
 export function EventCard({
 	event,
-	variant = "default",
+	variant = "box",
+	isWatched = false,
+	onToggleWatch,
 }: EventCardProps) {
-	if (variant === "compact") {
+	const isLine = variant === "line" || variant === "compact"
+	const now = new Date()
+	const start = new Date(event.startDateTime)
+	const end = event.endDateTime ? new Date(event.endDateTime) : null
+	const isLive = end ? (now >= start && now <= end) : false
+
+
+
+	if (isLine) {
 		return (
-			<Link
-				href={event.originalUrl}
-				target="_blank"
-				className="group flex gap-4 rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md"
+			<div
+				onClick={() => window.open(event.originalUrl, "_blank")}
+				className="group flex gap-4 rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md cursor-pointer select-none relative"
 			>
 				<div className="flex-1 min-w-0">
 					<div className="flex items-center gap-2 mb-1.5">
@@ -134,19 +147,57 @@ export function EventCard({
 					</div>
 					<div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
 						<MapPin className="h-3 w-3 shrink-0" />
-						{event.location.address ||
-							event.location.city ||
-							event.location.name}
+						<span className="truncate">
+							{event.location.address ||
+								event.location.city ||
+								event.location.name}
+						</span>
 					</div>
+
+
 				</div>
-			</Link>
-		);
+
+				{onToggleWatch && (
+					<button
+						onClick={(e) => {
+							e.preventDefault()
+							e.stopPropagation()
+							onToggleWatch(event._id)
+						}}
+						className={cn(
+							"p-1.5 rounded-full border bg-background/80 backdrop-blur hover:bg-background transition-colors shrink-0 self-start ml-auto shadow-sm",
+							isWatched ? "text-amber-500 border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/10" : "text-muted-foreground hover:text-foreground"
+						)}
+						title={isWatched ? "Remove from watchlist" : "Watch event"}
+					>
+						<Star className={cn("h-3.5 w-3.5", isWatched && "fill-amber-500")} />
+					</button>
+				)}
+			</div>
+		)
 	}
 
-	const fallback = getFallback(event.sourceName);
+	const fallback = getFallback(event.sourceName)
 
 	return (
-		<div className="group relative flex flex-col rounded-lg border bg-card shadow-sm transition-all hover:shadow-md overflow-hidden">
+		<div className="group relative flex flex-col rounded-lg border bg-card shadow-sm transition-all hover:shadow-md overflow-hidden animate-fade-in">
+			{onToggleWatch && (
+				<button
+					onClick={(e) => {
+						e.preventDefault()
+						e.stopPropagation()
+						onToggleWatch(event._id)
+					}}
+					className={cn(
+						"absolute top-3 right-3 z-10 p-1.5 rounded-full border bg-background/80 backdrop-blur hover:bg-background transition-colors shadow-sm",
+						isWatched ? "text-amber-500 border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/10" : "text-muted-foreground hover:text-foreground"
+					)}
+					title={isWatched ? "Remove from watchlist" : "Watch event"}
+				>
+					<Star className={cn("h-4 w-4", isWatched && "fill-amber-500")} />
+				</button>
+			)}
+
 			{event.imageUrl ? (
 				<div className="relative aspect-[16/9] overflow-hidden">
 					<Image
@@ -195,10 +246,14 @@ export function EventCard({
 
 				<div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
 					<MapPin className="h-3.5 w-3.5 shrink-0" />
-					{event.location.address ||
-						event.location.name ||
-						event.location.city}
+					<span className="truncate">
+						{event.location.address ||
+							event.location.name ||
+							event.location.city}
+					</span>
 				</div>
+
+
 
 				{event.description && (
 					<div
@@ -228,5 +283,5 @@ export function EventCard({
 				</div>
 			</div>
 		</div>
-	);
+	)
 }
