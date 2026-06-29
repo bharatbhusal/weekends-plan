@@ -69,6 +69,7 @@ export function getSection(
 }
 
 export const SECTION_ORDER = [
+	"watch",
 	"live",
 	"today",
 	"tomorrow",

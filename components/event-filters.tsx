@@ -6,7 +6,7 @@ import {
 	Search,
 	X,
 	LayoutGrid,
-	List,
+	Calendar,
 	Globe,
 	MapPin,
 } from "lucide-react";
@@ -23,8 +23,8 @@ interface EventFiltersProps {
 	cities: string[];
 	filters: FilterState;
 	onFiltersChange: (filters: FilterState) => void;
-	view: "grid" | "list";
-	onViewChange: (view: "grid" | "list") => void;
+	view: "grid" | "calendar";
+	onViewChange: (view: "grid" | "calendar") => void;
 }
 
 export function EventFilters({
@@ -60,10 +60,10 @@ export function EventFilters({
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => onViewChange("list")}
-							className={cn(view === "list" && "bg-accent")}
+							onClick={() => onViewChange("calendar")}
+							className={cn(view === "calendar" && "bg-accent")}
 						>
-							<List className="h-4 w-4" />
+							<Calendar className="h-4 w-4" />
 						</Button>
 					</div>
 
