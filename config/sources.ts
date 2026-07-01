@@ -23,6 +23,18 @@ export const sourceConfigs: SourceConfig[] = [
 		id: "eventbrite",
 		name: "Eventbrite",
 		type: "API",
+		enabled: true,
+	},
+	{
+		id: "goavo",
+		name: "GoAvo",
+		type: "API",
+		enabled: true,
+	},
+	{
+		id: "communitie",
+		name: "Communitie",
+		type: "SCRAPE",
 		enabled: false,
 	},
 ];

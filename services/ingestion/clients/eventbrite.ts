@@ -68,7 +68,7 @@ export class EventbriteClient implements Ingester {
 		const results: NormalizedEvent[] = [];
 		const seenUrls = new Set<string>();
 
-		for (const city of CITY_SLUGS.values) {
+		for (const city of Object.keys(CITY_SLUGS)) {
 			for (const category of CATEGORIES) {
 				try {
 					const events = await this.fetchCityCategory(
