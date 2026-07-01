@@ -25,4 +25,16 @@ export const sourceConfigs: SourceConfig[] = [
 		type: "API",
 		enabled: false,
 	},
+	{
+		id: "goavo",
+		name: "GoAvo",
+		type: "API",
+		enabled: true,
+	},
+	{
+		id: "communitie",
+		name: "Communitie",
+		type: "SCRAPE",
+		enabled: true,
+	},
 ];
