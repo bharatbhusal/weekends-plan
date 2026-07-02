@@ -122,6 +122,7 @@ export class EventbriteClient implements Ingester {
 		const eventUrl = raw.url || "";
 		const deterministicId = makeEventId(ID_PREFIX, eventUrl);
 
+		const isOnline = !raw.location?.name && !raw.location?.address;
 		const venueName = raw.location?.name || "";
 		const streetAddr =
 			raw.location?.address?.streetAddress || "";
@@ -150,6 +151,7 @@ export class EventbriteClient implements Ingester {
 				address: cleaned.address,
 				city: raw.location?.address?.addressLocality || city,
 			},
+			eventType: isOnline ? "online" : undefined,
 			sourceName: SOURCE_NAME,
 			originalUrl: eventUrl,
 			imageUrl: imgUrl,

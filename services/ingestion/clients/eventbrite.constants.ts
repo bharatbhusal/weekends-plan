@@ -5,10 +5,6 @@ export const CITY_SLUGS: Record<string, string> = {
 	hyderabad: "india--hyderabad",
 	pune: "india--pune",
 	chennai: "india--chennai",
-	kolkata: "india--kolkata",
-	ahmedabad: "india--ahmedabad",
-	jaipur: "india--jaipur",
-	lucknow: "india--lucknow",
 };
 
 export const CATEGORIES = [

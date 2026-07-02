@@ -151,6 +151,12 @@ export class LumaClient implements Ingester {
 			? ev.cover_url
 			: undefined;
 
+		const isOnline =
+			ev.location_type === "online" ||
+			(!ev.geo_address_info?.city &&
+				!ev.geo_address_info?.region &&
+				!ev.coordinate);
+
 		const cityName =
 			ev.geo_address_info?.city ||
 			ev.geo_address_info?.region ||
@@ -186,6 +192,7 @@ export class LumaClient implements Ingester {
 						}
 					: undefined,
 			},
+			eventType: isOnline ? "online" : undefined,
 			sourceName: SOURCE_NAME,
 			originalUrl: ev.url
 				? `${EVENT_URL_BASE}/${ev.url}`

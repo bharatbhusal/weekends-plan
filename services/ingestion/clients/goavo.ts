@@ -129,6 +129,7 @@ export class GoavoClient implements Ingester {
 				address: cleaned.address,
 				city: city || undefined,
 			},
+			eventType: raw.mode === "online" ? "online" : undefined,
 			sourceName: SOURCE_NAME,
 			originalUrl,
 			imageUrl,
