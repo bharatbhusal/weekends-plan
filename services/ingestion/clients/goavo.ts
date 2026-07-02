@@ -53,7 +53,8 @@ async function fetchFromBase(
 	const res = await fetch(url, {
 		signal: AbortSignal.timeout(TIMEOUT_MS),
 	});
-	if (!res.ok) throw new Error(`GoAvo API returned ${res.status}`);
+	if (!res.ok)
+		throw new Error(`GoAvo API returned ${res.status}`);
 	const body: RawResponse = await res.json();
 	return body.data || [];
 }
@@ -114,7 +115,8 @@ export class GoavoClient implements Ingester {
 			: EVENT_URL_BASE;
 
 		const tags: string[] = [];
-		if (raw.hostCommunityName) tags.push(raw.hostCommunityName);
+		if (raw.hostCommunityName)
+			tags.push(raw.hostCommunityName);
 		if (raw.mode) tags.push(raw.mode);
 		if (raw.isPaid) tags.push("paid");
 
@@ -123,7 +125,9 @@ export class GoavoClient implements Ingester {
 			title: raw.title,
 			description: raw.description || "",
 			startDateTime: new Date(raw.startDate),
-			endDateTime: raw.endDate ? new Date(raw.endDate) : undefined,
+			endDateTime: raw.endDate
+				? new Date(raw.endDate)
+				: undefined,
 			location: {
 				name: cleaned.name,
 				address: cleaned.address,
