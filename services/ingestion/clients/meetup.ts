@@ -146,6 +146,10 @@ export class MeetupClient implements Ingester {
 	): NormalizedEvent {
 		const deterministicId = makeEventId(ID_PREFIX, raw.id);
 
+		const isOnline =
+			raw.eventType === "ONLINE" ||
+			(!raw.venue?.name && !raw.venue?.address && !raw.venue?.city);
+
 		const venueName =
 			raw.venue?.name || raw.venue?.address || "";
 		const hasCoords = !!(raw.venue?.lat && raw.venue?.lng);
@@ -171,6 +175,7 @@ export class MeetupClient implements Ingester {
 					? { lat: raw.venue!.lat!, lng: raw.venue!.lng! }
 					: undefined,
 			},
+			eventType: isOnline ? "online" : undefined,
 			sourceName: SOURCE_NAME,
 			originalUrl: raw.eventUrl || "",
 			imageUrl: raw.image?.url || undefined,

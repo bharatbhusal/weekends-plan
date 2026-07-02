@@ -181,18 +181,18 @@ export class FossClient implements Ingester {
 			item.title.replace(/\s*–\s+[^–]+$/, "").trim() ||
 			item.title;
 
+		const online = isOnlineEvent(
+			item.categories?.[0],
+			typeHtml,
+			locationName,
+			item.title,
+		);
+
 		const city =
 			extractCityFromChapter(chapterRaw) ||
 			extractCityFromUrl(eventLink) ||
 			matchCity(locationName) ||
-			(isOnlineEvent(
-				item.categories?.[0],
-				typeHtml,
-				locationName,
-				item.title,
-			)
-				? "Online"
-				: undefined);
+			(online ? "Online" : undefined);
 
 		return {
 			_id: deterministicId,
@@ -205,6 +205,7 @@ export class FossClient implements Ingester {
 				address: cleaned.address,
 				city,
 			},
+			eventType: online ? "online" : undefined,
 			sourceName: SOURCE_NAME,
 			originalUrl: eventLink,
 			imageUrl:

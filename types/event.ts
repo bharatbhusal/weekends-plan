@@ -15,6 +15,7 @@ export interface NormalizedEvent {
 	imageUrl?: string;
 	category: string;
 	tags?: string[];
+	eventType?: "in-person" | "online";
 	updatedAt: Date;
 }
 

@@ -14,11 +14,12 @@ import { EmptyState } from "@/components/empty-state";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
-	CalendarDays,
 	ChevronLeft,
 	ChevronRight,
 } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { generalizeCity } from "@/lib/city-aliases";
 import {
 	getSection,
 	isStaticSection,
@@ -65,10 +66,12 @@ export function HomePageClient({
 		search: string;
 		sources: string[];
 		cities: string[];
+		eventType: "in-person" | "online" | "";
 	}>({
 		search: "",
 		sources: [],
-		cities: [],
+		cities: ["Hyderabad"],
+		eventType: "in-person",
 	});
 
 	const [view, setView] = useState<"grid" | "calendar">(
@@ -137,8 +140,17 @@ export function HomePageClient({
 
 			if (
 				filters.cities.length > 0 &&
-				!filters.cities.includes(event.location.city || "")
+				!filters.cities.includes(
+					generalizeCity(event.location.city) || "",
+				)
 			) {
+				return false;
+			}
+
+			if (filters.eventType === "in-person" && event.eventType === "online") {
+				return false;
+			}
+			if (filters.eventType === "online" && event.eventType !== "online") {
 				return false;
 			}
 
@@ -352,6 +364,7 @@ export function HomePageClient({
 			search: string;
 			sources: string[];
 			cities: string[];
+			eventType: "in-person" | "online" | "";
 		}) => {
 			setFilters(newFilters);
 			setPage(0);
@@ -459,7 +472,7 @@ export function HomePageClient({
 			<header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 				<div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
 					<div className="flex items-center gap-3">
-						<CalendarDays className="h-6 w-6 text-primary" />
+						<Image src="/icon.png" alt="" width={28} height={28} className="h-7 w-7" />
 						<h1 className="text-xl font-bold tracking-tight">
 							{title}
 						</h1>
@@ -494,7 +507,8 @@ export function HomePageClient({
 								setFilters({
 									search: "",
 									sources: [],
-									cities: [],
+									cities: ["Hyderabad"],
+									eventType: "in-person",
 								});
 							}}
 						/>

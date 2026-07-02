@@ -146,12 +146,18 @@ export function EventCard({
 						</span>
 					</div>
 					<div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-						<MapPin className="h-3 w-3 shrink-0" />
-						<span className="truncate">
-							{event.location.address ||
-								event.location.city ||
-								event.location.name}
-						</span>
+						{event.eventType === "online" ? (
+							<span className="truncate">Online</span>
+						) : (
+							<>
+								<MapPin className="h-3 w-3 shrink-0" />
+								<span className="truncate">
+									{event.location.address ||
+										event.location.city ||
+										event.location.name}
+								</span>
+							</>
+						)}
 					</div>
 
 
@@ -245,12 +251,18 @@ export function EventCard({
 				</div>
 
 				<div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-					<MapPin className="h-3.5 w-3.5 shrink-0" />
-					<span className="truncate">
-						{event.location.address ||
-							event.location.name ||
-							event.location.city}
-					</span>
+					{event.eventType === "online" ? (
+						<span className="truncate">Online</span>
+					) : (
+						<>
+							<MapPin className="h-3.5 w-3.5 shrink-0" />
+							<span className="truncate">
+								{event.location.address ||
+									event.location.name ||
+									event.location.city}
+							</span>
+						</>
+					)}
 				</div>
 
 
