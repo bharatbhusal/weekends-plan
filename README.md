@@ -66,6 +66,15 @@ scripts/              CLI entry points (ingest.ts)
 | [docs/components.md](docs/components.md) | Frontend component tree, state management, filtering |
 | [docs/user-journey.md](docs/user-journey.md) | User flow diagrams |
 
+## Screenshots
+
+### Main Page (Card View)
+
+![Main Page](/public/assets/home.png)
+
+See [docs/screenshots.md](docs/screenshots.md) for the full walkthrough,
+including the calendar view and mobile viewports.
+
 ## License
 
 MIT
