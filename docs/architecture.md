@@ -2,20 +2,20 @@
 
 ## System Overview
 
-Weekends Plan is a server-rendered Next.js application that aggregates tech events from multiple platforms (Luma, Meetup, FOSS United, Eventbrite) into a unified, searchable, filterable feed. Events are ingested via a scheduled GitHub Actions pipeline, stored in MongoDB Atlas, and served via Next.js App Router with Incremental Static Regeneration (ISR).
+Weekends Plan is a server-rendered Next.js application that aggregates tech events from multiple platforms (Luma, Meetup, FOSS United, Eventbrite) into a unified, filterable feed. Events are ingested via a scheduled GitHub Actions pipeline, stored in MongoDB Atlas, and served via Next.js App Router with Incremental Static Regeneration (ISR).
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| **Framework** | Next.js 14 (App Router) | SSR, ISR, API routes |
-| **Language** | TypeScript 5.4 | Type safety across stack |
-| **Styling** | Tailwind CSS 3.4 + shadcn/ui | Utility-first CSS + Radix primitives |
-| **Database** | MongoDB 6.5 (Atlas) | Event storage |
-| **CI/CD** | GitHub Actions | Daily event ingestion |
-| **Hosting** | Vercel | Production deployment |
-| **Icons** | lucide-react | UI icons |
-| **Theme** | next-themes | Dark/light mode |
+| Layer         | Technology                   | Purpose                              |
+| ------------- | ---------------------------- | ------------------------------------ |
+| **Framework** | Next.js 14 (App Router)      | SSR, ISR, API routes                 |
+| **Language**  | TypeScript 5.4               | Type safety across stack             |
+| **Styling**   | Tailwind CSS 3.4 + shadcn/ui | Utility-first CSS + Radix primitives |
+| **Database**  | MongoDB 6.5 (Atlas)          | Event storage                        |
+| **CI/CD**     | GitHub Actions               | Daily event ingestion                |
+| **Hosting**   | Vercel                       | Production deployment                |
+| **Icons**     | lucide-react                 | UI icons                             |
+| **Theme**     | next-themes                  | Dark/light mode                      |
 
 ## System Architecture Diagram
 
@@ -67,7 +67,7 @@ graph TB
 
     subgraph "Client"
         HPC[HomePageClient<br/>state: filters, view, pagination]
-        FILTERS[EventFilters<br/>search, source, city, view]
+        FILTERS[EventFilters<br/> source, city, view]
         GRID[EventGrid<br/>grid/list layout]
         CARD[EventCard<br/>default/compact/featured]
         EMPTY[EmptyState]
@@ -108,7 +108,7 @@ flowchart TD
     INGEST_SCRIPT -->|upsert| ATLAS[(MongoDB Atlas)]
     INGEST_SCRIPT -->|POST /api/revalidate| VERCEL_API[Vercel API Route]
     VERCEL_API -->|revalidatePath| CACHE[ISR Cache]
-    USER -->|visits| PROD
+    USER[User] -->|visits| PROD
     PROD -->|getEvents| ATLAS
 ```
 

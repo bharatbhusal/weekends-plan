@@ -12,15 +12,11 @@ flowchart TD
     B --> C[Server fetches all events<br/>from MongoDB]
     C --> D{Events found?}
     D -->|Yes| E[Render HomePageClient<br/>with initial events]
-    D -->|No| F[Render EmptyState<br/>"No events yet"]
+    D -->|No| F["Render EmptyState<br/>'No events yet'"]
     E --> G[User sees events grouped<br/>by timeframe sections]
     F --> G
 
     G --> H{User action}
-
-    H -->|Search| I[Type in search input]
-    I --> J[Events filtered by title]
-    J --> H
 
     H -->|Filter by source| K[Select source<br/>from dropdown]
     K --> L[Events filtered by source]
@@ -33,14 +29,14 @@ flowchart TD
     H -->|Toggle view| O[Switch grid/list layout]
     O --> H
 
-    H -->|Navigate sections| P[Click "This Week"<br/>"This Month" tab]
+    H -->|Navigate sections| P["Click 'This Week'<br/>'This Month' tab"]
     P --> Q[Scroll to section]
     Q --> H
 
     H -->|Click event card| R[Open event details<br/>in card expand]
     R --> S{User wants to attend?}
 
-    S -->|Yes| T[Click "Get Tickets"<br/>or external link]
+    S -->|Yes| T["Click 'Get Tickets'<br/>or external link"]
     T --> U[Redirect to original<br/>source platform<br/>Luma / Meetup / FOSS]
 
     S -->|No| H
@@ -51,10 +47,8 @@ flowchart TD
 ```mermaid
 flowchart LR
     LAND[Landing Page] -->|Browse| SECTION[Timeline Sections]
-    LAND -->|Search| SEARCH[Search Events]
     LAND -->|Filter| FILTER[Filter by Source/City]
     SECTION -->|Click| CARD[Event Card]
-    SEARCH -->|Results| CARD
     FILTER -->|Results| CARD
     CARD -->|"Get Tickets"| EXT[External Source]
 ```
@@ -67,9 +61,6 @@ flowchart LR
 ┌──────────────────────────────────────────────────┐
 │  ☀ Weekends Plan                  [▼ Source] [▼ City] │
 │                                                     │
-│  ┌─────────────────────────────────────────────────┐│
-│  │ 🔍 Search events...                   [🔲][⊞] ││
-│  └─────────────────────────────────────────────────┘│
 │                                                     │
 │  ● Live (2)                                         │
 │  ┌──────────┐ ┌──────────┐                          │

@@ -32,7 +32,6 @@ Each view is shown in two viewports: laptop (1280×800) and mobile (390×844).
 
 - **How to get there:** Open the site on a narrow viewport; same grid toggle.
 - **What it shows:** The card grid collapses to a single column; filters wrap
-  and the search field stretches full width.
 
 ## Calendar View (Mobile)
 
@@ -46,6 +45,6 @@ Each view is shown in two viewports: laptop (1280×800) and mobile (390×844).
 
 - **Theme toggle:** Top-right header button switches light/dark.
 - **Filters:** Source, city, and event-type (In-Person/Online) dropdowns, plus
-  free-text search, narrow both views.
+  free-text narrow both views.
 - **Watchlist:** The watch (eye) button on any card pins it to the top
   "Watchlist" section, persisted in `localStorage`.
