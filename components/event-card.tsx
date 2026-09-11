@@ -2,6 +2,7 @@ import Link from "next/link"
 import { NormalizedEvent } from "@/types/event"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { AddToCalendar } from "@/components/add-to-calendar"
 import {
 	Calendar,
 	MapPin,
@@ -119,11 +120,11 @@ export function EventCard({
 
 	if (isLine) {
 		return (
-			<div
-				onClick={() => window.open(event.originalUrl, "_blank")}
-				className="group flex gap-4 rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md cursor-pointer select-none relative"
-			>
-				<div className="flex-1 min-w-0">
+			<div className="group flex gap-4 rounded-lg border bg-card p-4 shadow-sm transition-all hover:shadow-md select-none relative">
+				<div
+					onClick={() => window.open(event.originalUrl, "_blank")}
+					className="flex-1 min-w-0 cursor-pointer"
+				>
 					<div className="flex items-center gap-2 mb-1.5">
 						<Badge variant={sourceBadgeVariant(event.sourceName)}>
 							{event.sourceName}
@@ -163,22 +164,25 @@ export function EventCard({
 
 				</div>
 
-				{onToggleWatch && (
-					<button
-						onClick={(e) => {
-							e.preventDefault()
-							e.stopPropagation()
-							onToggleWatch(event._id)
-						}}
-						className={cn(
-							"p-1.5 rounded-full border bg-background/80 backdrop-blur hover:bg-background transition-colors shrink-0 self-start ml-auto shadow-sm",
-							isWatched ? "text-amber-500 border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/10" : "text-muted-foreground hover:text-foreground"
-						)}
-						title={isWatched ? "Remove from watchlist" : "Watch event"}
-					>
-						<Star className={cn("h-3.5 w-3.5", isWatched && "fill-amber-500")} />
-					</button>
-				)}
+				<div className="flex flex-col items-center gap-2 self-start shrink-0 ml-auto">
+					{onToggleWatch && (
+						<button
+							onClick={(e) => {
+								e.preventDefault()
+								e.stopPropagation()
+								onToggleWatch(event._id)
+							}}
+							className={cn(
+								"p-1.5 rounded-full border bg-background/80 backdrop-blur hover:bg-background transition-colors shrink-0 shadow-sm",
+								isWatched ? "text-amber-500 border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/10" : "text-muted-foreground hover:text-foreground"
+							)}
+							title={isWatched ? "Remove from watchlist" : "Watch event"}
+						>
+							<Star className={cn("h-3.5 w-3.5", isWatched && "fill-amber-500")} />
+						</button>
+					)}
+					<AddToCalendar event={event} />
+				</div>
 			</div>
 		)
 	}
@@ -282,16 +286,19 @@ export function EventCard({
 							{event.location.city}
 						</Badge>
 					)}
-					<Button
-						variant="link"
-						size="sm"
-						className="ml-auto gap-1"
-						asChild
-					>
-						<Link href={event.originalUrl} target="_blank">
-							View <ExternalLink className="h-3 w-3" />
-						</Link>
-					</Button>
+					<div className="ml-auto flex items-center gap-1">
+						<AddToCalendar event={event} />
+						<Button
+							variant="link"
+							size="sm"
+							className="gap-1"
+							asChild
+						>
+							<Link href={event.originalUrl} target="_blank">
+								View <ExternalLink className="h-3 w-3" />
+							</Link>
+						</Button>
+					</div>
 				</div>
 			</div>
 		</div>

@@ -9,26 +9,26 @@
 
 ```typescript
 interface NormalizedEvent {
-  _id: string;              // SHA-256 hex of source + originalId
-  title: string;            // Event title
-  description: string;      // Markdown or plain text description
-  startDateTime: Date;      // Event start (always set)
-  endDateTime?: Date;       // Optional end time
+  _id: string; // SHA-256 hex of source + originalId
+  title: string; // Event title
+  description: string; // Markdown or plain text description
+  startDateTime: Date; // Event start (always set)
+  endDateTime?: Date; // Optional end time
   location: {
-    name: string;           // Venue name
-    address?: string;       // Street address
+    name: string; // Venue name
+    address?: string; // Street address
     coordinates?: {
       lat: number;
       lng: number;
     };
-    city?: string;          // Canonical city name (post-normalization)
+    city?: string; // Canonical city name (post-normalization)
   };
-  sourceName: string;       // "luma" | "meetup" | "foss" | "eventbrite"
-  originalUrl: string;      // Link to the event on source platform
-  imageUrl?: string;        // Banner/thumbnail image
-  category: string;         // Event category
-  tags?: string[];          // Optional tags
-  updatedAt: Date;          // Last upsert timestamp
+  sourceName: string; // "luma" | "meetup" | "foss" | "eventbrite"
+  originalUrl: string; // Link to the event on source platform
+  imageUrl?: string; // Banner/thumbnail image
+  category: string; // Event category
+  tags?: string[]; // Optional tags
+  updatedAt: Date; // Last upsert timestamp
 }
 ```
 
@@ -40,10 +40,10 @@ interface NormalizedEvent {
 type IngestType = "API" | "ICS" | "RSS" | "SCRAPE";
 
 interface SourceConfig {
-  id: string;        // "luma" | "foss" | "meetup" | "eventbrite"
-  name: string;      // Display name
-  type: IngestType;  // Ingestion method
-  enabled: boolean;  // Whether to fetch from this source
+  id: string; // "luma" | "foss" | "meetup" | "eventbrite"
+  name: string; // Display name
+  type: IngestType; // Ingestion method
+  enabled: boolean; // Whether to fetch from this source
 }
 ```
 
@@ -51,16 +51,16 @@ interface SourceConfig {
 
 ```typescript
 interface IngestionResult {
-  totalFetched: number;     // Raw events from all sources
-  totalUnique: number;      // After deduplication
-  inserted: number;         // New documents in municipal_events
-  modified: number;         // Updated documents in municipal_events
-  otherInserted: number;    // New documents in other_events
-  otherModified: number;    // Updated documents in other_events
+  totalFetched: number; // Raw events from all sources
+  totalUnique: number; // After deduplication
+  inserted: number; // New documents in municipal_events
+  modified: number; // Updated documents in municipal_events
+  otherInserted: number; // New documents in other_events
+  otherModified: number; // Updated documents in other_events
   sourceResults: Array<{
-    source: string;         // Source name
-    count: number;          // Events fetched
-    error?: string;         // Error message if source failed
+    source: string; // Source name
+    count: number; // Events fetched
+    error?: string; // Error message if source failed
   }>;
 }
 ```
@@ -69,8 +69,8 @@ interface IngestionResult {
 
 ```typescript
 interface EventSection {
-  label: string;  // "Live" | "Today" | "Tomorrow" | "This Week" | "This Month" | "July 2026"
-  key: string;    // "live" | "today" | "tomorrow" | "this-week" | "this-month" | "month-2026-6"
+  label: string; // "Live" | "Today" | "Tomorrow" | "This Week" | "This Month" | "July 2026"
+  key: string; // "live" | "today" | "tomorrow" | "this-week" | "this-month" | "month-2026-6"
 }
 ```
 
@@ -100,6 +100,7 @@ flowchart TD
 ```
 
 **Algorithm details:**
+
 - Compares every incoming event against the running unique list (O(n²) but acceptable for <1000 events)
 - **Time window:** events must start within 2 hours of each other
 - **Jaccard similarity:** tokenizes titles by lowercase alphanumeric words, computes intersection over union
@@ -111,8 +112,7 @@ flowchart TD
 flowchart LR
     A[Raw location string] --> B{cleaned.trim}
     B -->|null/empty| C[null]
-    B -->|valid| D[Search CITY_ALIASES<br/>~100 locality aliases<br/>6 canonical cities]
-    D --> E{Includes alias?}
+    B -->|valid| E{Includes alias?}
     E -->|Yes| F[Canonical city name]
     E -->|No| G[null]
 ```

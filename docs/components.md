@@ -12,7 +12,7 @@ graph TB
 
     subgraph "Client Components"
         HPC[HomePageClient<br/>State: filters, pagination, view]
-        FILTERS[EventFilters<br/>search, source, city, view toggle]
+        FILTERS[EventFilters<br/> source, city, view toggle]
         GRID[EventGrid<br/>grid/list variant]
         CARD[EventCard<br/>default/compact variant]
         EMPTY[EmptyState]
@@ -47,10 +47,9 @@ Both pages use `export const dynamic = "force-dynamic"` to skip static generatio
 ```typescript
 // Core state tracked in HomePageClient (~355 lines)
 interface HomePageState {
-	searchText: string; // Search filter text
-	selectedSources: string[]; // Multi-select source filter
-	selectedCities: string[]; // Multi-select city filter
-	viewMode: "grid" | "list"; // Display layout toggle
+  selectedSources: string[]; // Multi-select source filter
+  selectedCities: string[]; // Multi-select city filter
+  viewMode: "grid" | "list"; // Display layout toggle
 }
 ```
 
@@ -102,13 +101,12 @@ When switching sections, the view scrolls to the corresponding event section.
 
 ### EventFilters Controls
 
-| Control         | Type                         | Behavior                                        |
-| --------------- | ---------------------------- | ----------------------------------------------- |
-| Search input    | Text field with clear button | Filters events by title match                   |
-| Source dropdown | Single-select dropdown       | Filters by source (Luma/Meetup/FOSS/Eventbrite) |
-| City dropdown   | Single-select dropdown       | Filters by canonical city                       |
-| View toggle     | Icon buttons                 | Switches grid/list layout                       |
-| Clear all       | Button                       | Resets all filters                              |
+| Control         | Type                   | Behavior                                        |
+| --------------- | ---------------------- | ----------------------------------------------- |
+| Source dropdown | Single-select dropdown | Filters by source (Luma/Meetup/FOSS/Eventbrite) |
+| City dropdown   | Single-select dropdown | Filters by canonical city                       |
+| View toggle     | Icon buttons           | Switches grid/list layout                       |
+| Clear all       | Button                 | Resets all filters                              |
 
 ## UI Primitives (shadcn/ui)
 
