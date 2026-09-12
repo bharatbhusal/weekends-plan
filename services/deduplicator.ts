@@ -50,9 +50,27 @@ export function deduplicate(
 	events: NormalizedEvent[],
 ): NormalizedEvent[] {
 	const unique: NormalizedEvent[] = [];
+	const seenTitles = new Map<string, NormalizedEvent>();
 	const twoHoursMs = 2 * 60 * 60 * 1000;
 
+	const mergeInto = (target: NormalizedEvent, from: NormalizedEvent) => {
+		target.originalUrl = pickMoreSpecific(
+			target.originalUrl,
+			from.originalUrl,
+		);
+		if (!target.imageUrl && from.imageUrl) {
+			target.imageUrl = from.imageUrl;
+		}
+	};
+
 	for (const incoming of events) {
+		const titleKey = incoming.title.trim().toLowerCase();
+		const titleMatch = seenTitles.get(titleKey);
+		if (titleMatch) {
+			mergeInto(titleMatch, incoming);
+			continue;
+		}
+
 		let isDuplicate = false;
 
 		for (const existing of unique) {
@@ -69,13 +87,7 @@ export function deduplicate(
 
 				if (similarity > 0.85) {
 					isDuplicate = true;
-					existing.originalUrl = pickMoreSpecific(
-						existing.originalUrl,
-						incoming.originalUrl,
-					);
-					if (!existing.imageUrl && incoming.imageUrl) {
-						existing.imageUrl = incoming.imageUrl;
-					}
+					mergeInto(existing, incoming);
 					break;
 				}
 			}
@@ -83,6 +95,7 @@ export function deduplicate(
 
 		if (!isDuplicate) {
 			unique.push(incoming);
+			seenTitles.set(titleKey, incoming);
 		}
 	}
 
