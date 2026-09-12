@@ -37,4 +37,10 @@ export const sourceConfigs: SourceConfig[] = [
 		type: "SCRAPE",
 		enabled: false,
 	},
+	{
+		id: "konfhub",
+		name: "KonfHub",
+		type: "API",
+		enabled: true,
+	},
 ];

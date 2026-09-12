@@ -5,6 +5,7 @@ import { EventbriteClient } from "./clients/eventbrite";
 import { FossClient } from "./clients/foss";
 import { GoavoClient } from "./clients/goavo";
 import { CommunitieClient } from "./clients/communitie";
+import { KonfhubClient } from "./clients/konfhub";
 
 const INGESTERS: Record<string, new () => Ingester> = {
 	luma: LumaClient,
@@ -13,6 +14,7 @@ const INGESTERS: Record<string, new () => Ingester> = {
 	eventbrite: EventbriteClient,
 	goavo: GoavoClient,
 	communitie: CommunitieClient,
+	konfhub: KonfhubClient,
 };
 
 export function createIngester(

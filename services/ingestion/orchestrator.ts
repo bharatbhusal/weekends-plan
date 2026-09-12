@@ -9,8 +9,6 @@ export interface IngestionResult {
 	totalUnique: number;
 	inserted: number;
 	modified: number;
-	otherInserted: number;
-	otherModified: number;
 	sourceResults: Array<{
 		source: string;
 		count: number;
@@ -73,8 +71,6 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 			totalUnique: 0,
 			inserted: 0,
 			modified: 0,
-			otherInserted: 0,
-			otherModified: 0,
 			sourceResults,
 		};
 	}
@@ -88,17 +84,6 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 	console.log(
 		`Dedup: ${allEvents.length} -> ${uniqueEvents.length} unique events`,
 	);
-
-	const indianTech: NormalizedEvent[] = [];
-	const others: NormalizedEvent[] = [];
-	for (const event of uniqueEvents) {
-		if (event.location.city) {
-			indianTech.push(event);
-		} else {
-			event.location.city = event.location.name || event.location.address || undefined;
-			others.push(event);
-		}
-	}
 
 	const { MongoClient } = await import("mongodb");
 	const uri = process.env.MONGODB_URI;
@@ -117,11 +102,12 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
-		const [pastMain, pastOther] = await Promise.all([
-			db.collection("municipal_events").deleteMany({ startDateTime: { $lt: today } }),
-			db.collection("other_events").deleteMany({ startDateTime: { $lt: today } }),
-		]);
-		console.log(`Cleaned up ${pastMain.deletedCount} past events from municipal_events, ${pastOther.deletedCount} from other_events`);
+		const pastMain = await db
+			.collection("municipal_events")
+			.deleteMany({ startDateTime: { $lt: today } });
+		console.log(
+			`Cleaned up ${pastMain.deletedCount} past events from municipal_events`,
+		);
 
 		const writeBatch = async (
 			events: NormalizedEvent[],
@@ -141,16 +127,13 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 			return collection.bulkWrite(bulkOps, { ordered: false });
 		};
 
-		const [mainResult, otherResult] = await Promise.all([
-			writeBatch(indianTech, "municipal_events"),
-			writeBatch(others, "other_events"),
-		]);
+		const mainResult = await writeBatch(
+			uniqueEvents,
+			"municipal_events",
+		);
 
 		console.log(
 			`municipal_events: ${mainResult.upsertedCount} inserted, ${mainResult.modifiedCount} updated`,
-		);
-		console.log(
-			`other_events: ${otherResult.upsertedCount} inserted, ${otherResult.modifiedCount} updated`,
 		);
 
 		return {
@@ -158,8 +141,6 @@ export async function runIngestionPipeline(): Promise<IngestionResult> {
 			totalUnique: uniqueEvents.length,
 			inserted: mainResult.upsertedCount,
 			modified: mainResult.modifiedCount,
-			otherInserted: otherResult.upsertedCount,
-			otherModified: otherResult.modifiedCount,
 			sourceResults,
 		};
 	} finally {
