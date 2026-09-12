@@ -8,7 +8,7 @@ import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { generalizeCity } from "@/lib/city-aliases";
@@ -327,7 +327,7 @@ export function HomePageClient({
               : "border-border text-foreground hover:bg-accent",
           )}
         >
-          <ChevronLeft className="h-4 w-4" />
+          <FaChevronLeft className="h-4 w-4" />
           Previous
         </button>
         <span className="text-sm font-semibold text-muted-foreground px-2 min-w-[120px] text-center">
@@ -341,7 +341,7 @@ export function HomePageClient({
           className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-border text-foreground hover:bg-accent transition-colors"
         >
           Next
-          <ChevronRight className="h-4 w-4" />
+          <FaChevronRight className="h-4 w-4" />
         </button>
       </div>
     );
@@ -360,7 +360,7 @@ export function HomePageClient({
               : "border-border/50 text-muted-foreground/50 cursor-not-allowed",
           )}
         >
-          <ChevronLeft className="h-4 w-4" />
+          <FaChevronLeft className="h-4 w-4" />
           Previous
         </button>
         <span className="text-sm font-semibold text-muted-foreground px-2 min-w-[100px] text-center">
@@ -377,7 +377,7 @@ export function HomePageClient({
           )}
         >
           Next
-          <ChevronRight className="h-4 w-4" />
+          <FaChevronRight className="h-4 w-4" />
         </button>
       </div>
     );

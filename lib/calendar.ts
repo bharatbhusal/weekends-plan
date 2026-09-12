@@ -9,13 +9,9 @@ export function isIntentGoing(intent: CalendarIntent): boolean {
   return intent === CalendarIntent.Going;
 }
 
-export interface CalendarTicket {
-  file?: { name: string; mime: string; data: string };
-}
-
-export interface CalendarOptions {
-  intent: CalendarIntent;
-  ticket?: CalendarTicket;
+export enum CalendarPlatform {
+  Apple = "apple",
+  Google = "google",
 }
 
 function toDate(value: Date | string): Date {
@@ -50,42 +46,62 @@ function toPlain(text: string): string {
     .trim();
 }
 
-function eventLocation(event: NormalizedEvent): string {
-  if (event.eventType === "online") return "Online";
+// --- Location -------------------------------------------------------------
+
+function addressParts(event: NormalizedEvent): string {
   return [event.location.name, event.location.address, event.location.city]
     .filter((x) => x && x.length > 0)
     .join(", ");
 }
 
+function coordinates(event: NormalizedEvent): string | undefined {
+  const c = event.location.coordinates;
+  if (c && Number.isFinite(c.lat) && Number.isFinite(c.lng)) {
+    return `${c.lat.toFixed(6)}, ${c.lng.toFixed(6)}`;
+  }
+  return undefined;
+}
+
+function eventLocation(event: NormalizedEvent, platform: CalendarPlatform): string {
+  if (event.eventType === "online") return "Online";
+  const address = addressParts(event);
+  const coords = coordinates(event);
+  if (platform === CalendarPlatform.Apple) {
+    return address || coords || "";
+  }
+  return coords || address;
+}
+
 function venueUrl(event: NormalizedEvent): string | undefined {
   const query = (q: string) =>
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
-  const coords = event.location.coordinates;
-  if (coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng)) {
-    return query(`${coords.lat.toFixed(6)},${coords.lng.toFixed(6)}`);
+  const c = event.location.coordinates;
+  if (c && Number.isFinite(c.lat) && Number.isFinite(c.lng)) {
+    return query(`${c.lat.toFixed(6)},${c.lng.toFixed(6)}`);
   }
-  const text = [event.location.name, event.location.address, event.location.city]
-    .filter((x) => x && x.length > 0)
-    .join(", ");
-  return text ? query(text) : undefined;
+  const address = addressParts(event);
+  return address ? query(address) : undefined;
 }
 
-function buildDescription(event: NormalizedEvent, opts: CalendarOptions): string {
+// --- Shared description ---------------------------------------------------
+
+function buildDescription(event: NormalizedEvent, intent: CalendarIntent): string {
   const parts: string[] = [];
-  if (!isIntentGoing(opts.intent)) {
-    parts.push(`NOT REGISTERED YET`);
-    parts.push("");
+  if (!isIntentGoing(intent)) {
+    parts.push("NOT REGISTERED YET", "");
   }
   if (event.description) parts.push(toPlain(event.description));
   return parts.join("\n").trim();
 }
 
+// --- Apple Calendar (ICS) ---------------------------------------------------
+
 const CAL_PRODID = "-//Weekends Plan//Events//EN";
 
-function buildBlock(event: NormalizedEvent, opts: CalendarOptions): string {
+function buildICS(event: NormalizedEvent, intent: CalendarIntent): string {
   const start = toDate(event.startDateTime);
-  const summary = isIntentGoing(opts.intent) ? event.title : `Reminder: ${event.title}`;
-  const description = buildDescription(event, opts);
+  const summary = isIntentGoing(intent) ? event.title : `Reminder: ${event.title}`;
+  const description = buildDescription(event, intent);
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -103,24 +119,19 @@ function buildBlock(event: NormalizedEvent, opts: CalendarOptions): string {
   }
 
   lines.push(`SUMMARY:${escapeText(summary)}`);
-  lines.push(`LOCATION:${escapeText(eventLocation(event))}`);
+  lines.push(`LOCATION:${escapeText(eventLocation(event, CalendarPlatform.Apple))}`);
   lines.push(`DESCRIPTION:${foldLine(escapeText(description))}`);
 
-  const url = isIntentGoing(opts.intent) ? venueUrl(event) : event.originalUrl;
+  const url = isIntentGoing(intent) ? venueUrl(event) : event.originalUrl;
   if (url) lines.push(`URL:${url}`);
 
-  const coords = event.location.coordinates;
-  if (coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng)) {
-    lines.push(`GEO:${coords.lat.toFixed(6)};${coords.lng.toFixed(6)}`);
+  const coords = coordinates(event);
+  if (coords) {
+    const c = event.location.coordinates!;
+    lines.push(`GEO:${c.lat.toFixed(6)};${c.lng.toFixed(6)}`);
   }
 
-  if (isIntentGoing(opts.intent) && opts.ticket?.file) {
-    const base64 = opts.ticket.file.data;
-    const folded = base64.match(/.{1,72}/g)?.join("\r\n ") || "";
-    lines.push(`ATTACH;FMTTYPE=${opts.ticket.file.mime};ENCODING=BASE64;VALUE=BINARY:${folded}`);
-  }
-
-  if (!isIntentGoing(opts.intent)) {
+  if (!isIntentGoing(intent)) {
     lines.push(
       "BEGIN:VALARM",
       "ACTION:DISPLAY",
@@ -134,31 +145,33 @@ function buildBlock(event: NormalizedEvent, opts: CalendarOptions): string {
   return lines.join("\r\n") + "\r\n";
 }
 
-export function toICS(event: NormalizedEvent, opts: CalendarOptions): string {
-  return buildBlock(event, opts);
+// --- Google Calendar ---------------------------------------------------------
+
+function detailsWithOriginalUrl(event: NormalizedEvent, intent: CalendarIntent): string {
+  const base = buildDescription(event, intent);
+  if (event.description?.includes(event.originalUrl)) return base;
+  return `${base}\n\nOriginal Registration Url: ${event.originalUrl}`;
 }
 
-export function googleCalendarUrl(event: NormalizedEvent, opts: CalendarOptions): string {
+export function toGoogleCalendar(event: NormalizedEvent, intent: CalendarIntent): string {
   const start = toDate(event.startDateTime);
   const end = event.endDateTime
     ? toDate(event.endDateTime)
     : new Date(start.getTime() + 60 * 60 * 1000);
   const params = new URLSearchParams({
     action: "TEMPLATE",
-    text: isIntentGoing(opts.intent) ? event.title : `Reminder: ${event.title}`,
+    text: isIntentGoing(intent) ? event.title : `Reminder: ${event.title}`,
     dates: `${icsDateTime(start)}/${icsDateTime(end)}`,
-    details: buildDescription(event, opts),
-    location: isIntentGoing(opts.intent)
-      ? (venueUrl(event) ?? eventLocation(event))
-      : eventLocation(event),
+    details: isIntentGoing(intent)
+      ? buildDescription(event, intent)
+      : detailsWithOriginalUrl(event, intent),
+    location: eventLocation(event, CalendarPlatform.Google),
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-export function isIOS(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
+// --- Exports ------------------------------------------------------------------
+
+export function toAppleCalendar(event: NormalizedEvent, intent: CalendarIntent): string {
+  return buildICS(event, intent);
 }

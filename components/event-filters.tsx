@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { X, LayoutGrid, Calendar, Globe, MapPin } from "lucide-react";
+import { FaCalendar, FaGlobe, FaMapPin, FaThLarge, FaTimes } from "react-icons/fa";
 import { cn } from "@/lib/utils";
 
 interface FilterState {
@@ -49,7 +49,7 @@ export function EventFilters({
               onClick={() => onViewChange("grid")}
               className={cn(view === "grid" && "bg-accent")}
             >
-              <LayoutGrid className="h-4 w-4" />
+              <FaThLarge className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
@@ -57,7 +57,7 @@ export function EventFilters({
               onClick={() => onViewChange("calendar")}
               className={cn(view === "calendar" && "bg-accent")}
             >
-              <Calendar className="h-4 w-4" />
+              <FaCalendar className="h-4 w-4" />
             </Button>
 
             <div className="relative flex-1">
@@ -78,14 +78,14 @@ export function EventFilters({
                   </option>
                 ))}
               </select>
-              <MapPin className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <FaMapPin className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             </div>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1">
-            <Globe className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <FaGlobe className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <select
               className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-8 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring appearance-none bg-[length:16px] bg-[right_8px_center] bg-no-repeat"
               style={{
@@ -132,7 +132,7 @@ export function EventFilters({
 
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={clearAll} className="text-xs gap-1">
-              <X className="h-3 w-3" />
+              <FaTimes className="h-3 w-3" />
               <span className="hidden sm:inline">Clear</span>
             </Button>
           )}
