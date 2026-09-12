@@ -1,28 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import {
-  BellRing,
-  Calendar,
-  CalendarCheck,
-  FileText,
-  Paperclip,
-  X,
-} from "lucide-react";
+import { FaApple, FaBell, FaCalendar, FaCalendarCheck, FaGoogle } from "react-icons/fa";
 import { NormalizedEvent } from "@/types/event";
 import {
   CalendarIntent,
-  CalendarTicket,
-  googleCalendarUrl,
   isIntentGoing,
-  isIOS,
-  toICS,
+  toAppleCalendar,
+  toGoogleCalendar,
 } from "@/lib/calendar";
 import { cn, formatEventDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -35,27 +25,7 @@ interface AddToCalendarProps {
   event: NormalizedEvent;
 }
 
-interface TicketFile {
-  name: string;
-  mime: string;
-  data: string;
-}
-
-function fileToBase64(file: File): Promise<TicketFile> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () =>
-      resolve({
-        name: file.name,
-        mime: file.type || "application/octet-stream",
-        data: String(reader.result).split(",")[1] ?? "",
-      });
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
-function downloadICS(event: NormalizedEvent, content: string) {
+function downloadICSFile(event: NormalizedEvent, content: string) {
   const slug = event.title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -76,31 +46,17 @@ export function AddToCalendar({ event }: AddToCalendarProps) {
   const [intent, setIntent] = useState<CalendarIntent>(
     CalendarIntent.Going,
   );
-  const [ticketFile, setTicketFile] = useState<TicketFile | null>(
-    null,
-  );
 
-  const handleSave = () => {
-    const ticket: CalendarTicket | undefined = isIntentGoing(intent)
-      ? { file: ticketFile ?? undefined }
-      : undefined;
-    const opts = { intent, ticket };
+  const close = () => setOpen(false);
 
-    if (isIntentGoing(intent) && ticketFile) {
-      downloadICS(event, toICS(event, opts));
-    } else if (isIOS()) {
-      downloadICS(event, toICS(event, opts));
-    } else {
-      window.open(googleCalendarUrl(event, opts), "_blank");
-    }
-
-    setTicketFile(null);
-    setOpen(false);
+  const handleAppleCalendar = () => {
+    downloadICSFile(event, toAppleCalendar(event, intent));
+    close();
   };
 
-  const handleFile = async (file?: File) => {
-    if (!file) return;
-    setTicketFile(await fileToBase64(file));
+  const handleGoogleCalendar = () => {
+    window.open(toGoogleCalendar(event, intent), "_blank");
+    close();
   };
 
   return (
@@ -111,7 +67,7 @@ export function AddToCalendar({ event }: AddToCalendarProps) {
           title="Add to calendar"
           className="p-1.5 rounded-full border bg-background/80 backdrop-blur hover:bg-background transition-colors shrink-0 shadow-sm text-muted-foreground hover:text-primary"
         >
-          <Calendar className="h-3.5 w-3.5" />
+          <FaCalendar className="h-3.5 w-3.5" />
         </button>
       </DrawerTrigger>
       <DrawerContent>
@@ -134,7 +90,7 @@ export function AddToCalendar({ event }: AddToCalendarProps) {
                   : "border-border text-muted-foreground hover:bg-accent",
               )}
             >
-              <CalendarCheck className="h-4 w-4" />
+              <FaCalendarCheck className="h-4 w-4" />
               Going
             </button>
             <button
@@ -146,7 +102,7 @@ export function AddToCalendar({ event }: AddToCalendarProps) {
                   : "border-border text-muted-foreground hover:bg-accent",
               )}
             >
-              <BellRing className="h-4 w-4" />
+              <FaBell className="h-4 w-4" />
               Reminder to register
             </button>
           </div>
@@ -154,62 +110,36 @@ export function AddToCalendar({ event }: AddToCalendarProps) {
           {!isIntentGoing(intent) && (
             <p className="text-xs text-muted-foreground">
               Adds «Reminder: {event.title}» with a popup 1 day
-              before and the registration link. No ticket.
+              before and the registration link.
             </p>
           )}
 
-          {isIntentGoing(intent) && (
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Ticket file (optional, PDF or image)
-                </label>
-                {!ticketFile ? (
-                  <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground hover:bg-accent transition-colors">
-                    <Paperclip className="h-4 w-4" />
-                    Choose ticket file
-                    <input
-                      type="file"
-                      accept="application/pdf,image/*"
-                      className="hidden"
-                      onChange={(e) =>
-                        handleFile(e.target.files?.[0])
-                      }
-                    />
-                  </label>
-                ) : (
-                  <div className="flex items-center gap-2 rounded-lg border border-border p-3">
-                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="truncate flex-1 text-sm">
-                      {ticketFile.name}
-                    </span>
-                    <button
-                      onClick={() => setTicketFile(null)}
-                      className="p-1 rounded-full text-muted-foreground hover:text-foreground"
-                      title="Remove ticket"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Embedded in the .ics file (Apple/Android
-                  calendar). Without a file opens Google Calendar.
-                </p>
-              </div>
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Pick one export: Apple Calendar or Google Calendar.
+          </p>
         </div>
 
         <DrawerFooter className="px-6 pb-6">
-          <Button onClick={handleSave} className="w-full">
-            Save to calendar
-          </Button>
-          <DrawerClose asChild>
-            <Button variant="outline" className="w-full">
+          <div className="grid w-full gap-2 sm:grid-cols-2">
+            <Button onClick={close} variant="outline">
               Cancel
             </Button>
-          </DrawerClose>
+            <Button
+              onClick={handleAppleCalendar}
+              className="gap-1.5"
+            >
+              <FaApple className="h-4 w-4" />
+              Apple Calendar
+            </Button>
+          </div>
+          <Button
+            onClick={handleGoogleCalendar}
+            variant="outline"
+            className="w-full gap-1.5"
+          >
+            <FaGoogle className="h-4 w-4" />
+            Google Calendar
+          </Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
