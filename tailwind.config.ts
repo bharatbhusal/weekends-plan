@@ -7,6 +7,12 @@ const config: Config = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
   ],
+  safelist: [
+    {
+      pattern:
+        /^(bg|text|from|to)-(purple|emerald|red|orange|teal|pink|blue)(-(600|900)\/\d{2}|-400)$/,
+    },
+  ],
   theme: {
     container: {
       center: true,

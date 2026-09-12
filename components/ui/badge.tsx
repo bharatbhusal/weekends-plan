@@ -11,10 +11,6 @@ const badgeVariants = cva(
         secondary: 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
         destructive: 'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
         outline: 'text-foreground',
-        luma: 'border-transparent bg-purple-600/20 text-purple-400 hover:bg-purple-600/30',
-        foss: 'border-transparent bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30',
-        meetup: 'border-transparent bg-red-600/20 text-red-400 hover:bg-red-600/30',
-        eventbrite: 'border-transparent bg-orange-600/20 text-orange-400 hover:bg-orange-600/30',
       },
     },
     defaultVariants: {

@@ -26,4 +26,5 @@ export interface SourceConfig {
 	name: string;
 	type: IngestType;
 	enabled: boolean;
+	color?: string;
 }

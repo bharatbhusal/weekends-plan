@@ -7,55 +7,13 @@ import { FaArrowUpRightFromSquare } from "react-icons/fa6";
 import { formatDateRange, timeUntilEvent, cn } from "@/lib/utils";
 import { marked } from "marked";
 import Image from "next/image";
+import { getSourceStyle } from "@/config/sources";
 
 interface EventCardProps {
   event: NormalizedEvent;
   variant?: "box" | "line" | "default" | "compact" | "featured";
   isWatched?: boolean;
   onToggleWatch?: (id: string) => void;
-}
-
-const sourceBadgeVariant = (source: string) => {
-  switch (source.toLowerCase()) {
-    case "luma":
-      return "luma" as const;
-    case "foss":
-      return "foss" as const;
-    case "meetup":
-      return "meetup" as const;
-    case "eventbrite":
-      return "eventbrite" as const;
-    default:
-      return "secondary" as const;
-  }
-};
-
-const SOURCE_FALLBACK: Record<string, { color: string; initial: string }> = {
-  luma: {
-    color: "from-purple-600/30 to-purple-900/20",
-    initial: "L",
-  },
-  foss: {
-    color: "from-emerald-600/30 to-emerald-900/20",
-    initial: "F",
-  },
-  meetup: {
-    color: "from-red-600/30 to-red-900/20",
-    initial: "M",
-  },
-  eventbrite: {
-    color: "from-orange-600/30 to-orange-900/20",
-    initial: "E",
-  },
-};
-
-function getFallback(source: string) {
-  return (
-    SOURCE_FALLBACK[source.toLowerCase()] || {
-      color: "from-muted to-muted/50",
-      initial: "?",
-    }
-  );
 }
 
 function TimeBadge({ start, end }: { start: Date; end?: Date }) {
@@ -104,7 +62,7 @@ export function EventCard({
           className="flex-1 min-w-0 cursor-pointer"
         >
           <div className="flex items-center gap-2 mb-1.5">
-            <Badge variant={sourceBadgeVariant(event.sourceName)}>{event.sourceName}</Badge>
+            <Badge variant="outline" className={getSourceStyle(event.sourceName).badgeClass}>{getSourceStyle(event.sourceName).label}</Badge>
             <TimeBadge start={event.startDateTime} end={event.endDateTime} />
           </div>
           <h3 className="font-semibold leading-snug truncate">{event.title}</h3>
@@ -151,7 +109,7 @@ export function EventCard({
     );
   }
 
-  const fallback = getFallback(event.sourceName);
+  const style = getSourceStyle(event.sourceName);
 
   return (
     <div className="group relative flex flex-col rounded-lg border bg-card shadow-sm transition-all hover:shadow-md overflow-hidden animate-fade-in">
@@ -187,15 +145,15 @@ export function EventCard({
         </div>
       ) : (
         <div
-          className={`aspect-[16/9] bg-gradient-to-br ${fallback.color} flex items-center justify-center`}
+          className={`aspect-[16/9] bg-gradient-to-br ${style.gradient} flex items-center justify-center`}
         >
-          <span className="text-4xl font-bold text-muted-foreground/30">{fallback.initial}</span>
+          <span className="text-4xl font-bold text-muted-foreground/30">{style.initial}</span>
         </div>
       )}
 
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Badge variant={sourceBadgeVariant(event.sourceName)}>{event.sourceName}</Badge>
+          <Badge variant="outline" className={style.badgeClass}>{style.label}</Badge>
           <TimeBadge start={event.startDateTime} end={event.endDateTime} />
         </div>
 
